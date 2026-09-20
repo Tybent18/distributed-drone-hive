@@ -6,7 +6,7 @@ Distributed Drone Hive is a simulation-first research laboratory for infrastruct
 
 ![Adaptive drone hive expansion](demos/drone-hive-stage-one.gif)
 
-[Methods](docs/METHODS.md) · [Architecture](docs/ARCHITECTURE.md) · [Evidence](docs/EVIDENCE.md) · [Safety](docs/SAFETY.md) · [Roadmap](docs/ROADMAP.md) · [Baseline results](results/stage_one_baseline/README.md)
+[Methods](docs/METHODS.md) · [Architecture](docs/ARCHITECTURE.md) · [Evidence](docs/EVIDENCE.md) · [Safety](docs/SAFETY.md) · [Roadmap](docs/ROADMAP.md) · [Data catalog](data/README.md) · [Baseline results](data/stage_one_baseline/runs/2026-09-15_relay-policy-v1/)
 
 ## What is implemented
 
@@ -57,9 +57,9 @@ The desktop dashboard runs and exports the complete policy × seed × failure ma
 
 Across five seeds and 240 steps, the fixed-relay policy mapped 51.6% of the environment while retaining 74.2% of drones. The carrier-only control mapped 43.8% but ended with no active drones. Adaptive-frontier placement retained every drone in nominal operation while mapping 36.2%; loss of its first relay disconnected the chain and collapsed survival. That is a useful negative result: adaptive placement preserved energy but produced a brittle topology in the current configuration.
 
-![Stage One policy comparison](results/stage_one_baseline/policy_comparison.png)
+![Stage One policy comparison](data/stage_one_baseline/runs/2026-09-15_relay-policy-v1/policy_comparison.png)
 
-Read the [complete baseline interpretation](results/stage_one_baseline/README.md).
+Read the [complete dated baseline interpretation](data/stage_one_baseline/runs/2026-09-15_relay-policy-v1/).
 
 ## Scientific and safety boundary
 

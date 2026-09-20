@@ -1,6 +1,10 @@
 # Frozen Stage One baseline
 
-[← Project home](../../README.md) · [Methods](../../docs/METHODS.md) · [Evidence guide](../../docs/EVIDENCE.md) · [Roadmap](../../docs/ROADMAP.md)
+[← Project home](../../../../README.md) · [Methods](../../../../docs/METHODS.md) · [Evidence guide](../../../../docs/EVIDENCE.md) · [Roadmap](../../../../docs/ROADMAP.md)
+
+Run ID: `2026-09-15_relay-policy-v1`  
+Generated: `2026-09-15T15:11:38.093970+00:00`  
+Status: frozen simulation baseline
 
 This bundle is the first frozen computational baseline for Distributed Drone Hive. It contains five independent seeds, 240 steps per run, 24 drones, three deployment policies, and relay-failure tests for the two policies that deploy relays.
 
