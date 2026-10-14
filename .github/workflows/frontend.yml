@@ -41,12 +41,12 @@ jobs:
       - name: Commit preview to development branch
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
-          git fetch origin "${{ github.head_ref }}"
-          git checkout -B "${{ github.head_ref }}" FETCH_HEAD
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/readme/threejs-colony-console.png assets/readme/colony-*.png
-          git diff --cached --quiet || git commit -m "docs(frontend): record live Three.js interface preview [skip ci]"
+          git diff --cached --quiet || git commit -m "docs(frontend): capture six live 3D demos [skip ci]"
+          git fetch origin "${{ github.head_ref }}"
+          git rebase FETCH_HEAD
           git push origin HEAD:${{ github.head_ref }}
       - uses: actions/upload-artifact@v4
         with:
