@@ -22,7 +22,7 @@ try {
    }
    const label=await page.locator('.timeline-copy b').innerText();
    if(!label.includes('STAGE '+(step+1)+'/6'))throw new Error(id+': incorrect '+label);
-   await page.screenshot({path:'../demos/webgl-frames/'+id+'-'+step+'.png'});
+   if([0,2,5].includes(step)) await page.screenshot({path:'../demos/webgl-frames/'+id+'-'+step+'.png'});
    if(step===3){
     await page.screenshot({path:'../assets/readme/colony-'+id+'.png'});
     if(id==='bridge')await page.screenshot({
