@@ -38,7 +38,7 @@ class ColonyConsole(tk.Tk):
                  bg="#101722", font=("Arial", 19, "bold")).pack(anchor="w")
         tk.Label(
             top,
-            text="Hazardous terrain reconnaissance • abstract simulation; no physical drone control",
+            text="Hazardous terrain recon • simulated bees, nests and eggs",
                  fg="#a8b7ce", bg="#101722").pack(anchor="w")
 
         body = tk.Frame(self, bg="#101722")
