@@ -127,7 +127,7 @@ class ColonyWeb:
         )
         points = layouts[index]
         parents = (None, f"{colony}:N0", f"{colony}:N1", f"{colony}:N2", f"{colony}:N2")
-        for level, (position, parent) in enumerate(zip(points, parents)):
+        for level, (position, parent) in enumerate(zip(points, parents, strict=True)):
             key = f"{colony}:N{level}"
             kind = ("energy_root" if level == 0 else "queen_hive" if level == 1
                     else "expansion_hive")
