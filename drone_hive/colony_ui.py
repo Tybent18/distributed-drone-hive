@@ -36,7 +36,9 @@ class ColonyConsole(tk.Tk):
         top.pack(fill="x", padx=18, pady=(14, 8))
         tk.Label(top, text="DRONE HIVE  /  COLONY OPS", fg="#8de6ff",
                  bg="#101722", font=("Arial", 19, "bold")).pack(anchor="w")
-        tk.Label(top, text="Hazardous terrain reconnaissance  •  abstract simulation; no physical drone control",
+        tk.Label(
+            top,
+            text="Hazardous terrain reconnaissance • abstract simulation; no physical drone control",
                  fg="#a8b7ce", bg="#101722").pack(anchor="w")
 
         body = tk.Frame(self, bg="#101722")
@@ -150,7 +152,10 @@ class ColonyConsole(tk.Tk):
 
     def authorize(self) -> None:
         if not self.mission.authorize_contingency():
-            messagebox.showinfo("Cannot deploy", "A pending egg, working operator link, and connected handler above reserve are required.")
+            messagebox.showinfo(
+                "Cannot deploy",
+                "A pending egg, operator link, and connected handler above reserve are required.",
+            )
         self.render()
 
     def link_loss(self) -> None:
