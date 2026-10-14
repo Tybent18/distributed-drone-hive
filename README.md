@@ -8,6 +8,11 @@
 
 ## New: Interactive 3D Colony Operations Console (React + Three.js)
 
+![Drone Hive real 3D frontend preview — interactive bridge scenario](assets/readme/threejs-colony-console.png)
+
+*Captured from the running browser implementation on the frontend development branch; not concept art. Visual state is currently scripted, while the Python research model remains separate.*
+
+
 The new **[3D frontend](frontend/)** complements the Python research simulator with a cinematic procedural archaeological landscape, visible bee-inspired drones, energy roots, Queen hives, relay/retriever staffing, glowing multi-colony webs and standby midpoint micro-nests. Click nodes and eggs to inspect assignments, orbit the camera, and use built-in failure controls to demonstrate the **N1 ↔ E1 ↔ E2 ↔ N3** emergency bridge.
 
 ```bash
