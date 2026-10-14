@@ -20,7 +20,7 @@ def main() -> int:
         ui.geometry("1500x875+20+20")
         ui.update_idletasks()
         ui.update()
-        if not ui.model.validate_architecture() is None:
+        if ui.model.validate_architecture() is not None:
             raise AssertionError("Invalid colony hierarchy")
         if ui.model.metrics()["colonies"] != 3:
             raise AssertionError("Expected three colonies")
