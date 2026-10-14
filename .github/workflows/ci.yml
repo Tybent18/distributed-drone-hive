@@ -32,6 +32,12 @@ jobs:
         with:
           name: stage-two-diagnostic-py${{ matrix.python-version }}
           path: results/stage-two-diagnostic/
+      - name: Run seven-arm Stage Two exploratory ablation
+        run: python -m drone_hive.stage_two_ablation --output results/stage-two-ablation
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-two-ablation-py${{ matrix.python-version }}
+          path: results/stage-two-ablation/
       - name: Install virtual display for GUI smoke test
         if: matrix.python-version == '3.12'
         run: sudo apt-get update -qq && sudo apt-get install -y xvfb
