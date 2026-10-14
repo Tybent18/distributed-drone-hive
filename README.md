@@ -1,98 +1,119 @@
-# Distributed Drone Hive
+# Drone Hive — Federated Colony Exploration Simulator
 
-**What changes when swarm endurance belongs to persistent infrastructure instead of individual batteries?**
+**A multi-colony, bee-inspired research simulator for non-invasive reconnaissance of hazardous or inaccessible terrain.** Drone Hive models recursively deployed nests, mission-specialized reconnaissance drones, energy constraints, inter-colony assistance, and midpoint emergency micro-nests. Its archaeological demonstration environment is **inspired by Göbekli Tepe**, not a survey of the actual World Heritage site.
 
-Distributed Drone Hive is a simulation-first research laboratory for infrastructure-driven swarm robotics. A carrier seeds an environment with energy-and-communication hives; low-power drones explore locally; relay topology determines which energy fields remain usable. Stage One turns the Drone Hive Systems concept into an executable comparison of carrier-only, fixed-relay, and adaptive-frontier deployment.
+![Federated colony web and emergency egg bridging](assets/architecture/colony-web.svg)
 
-![Adaptive drone hive expansion](demos/drone-hive-stage-one.gif)
+> **Research status:** The newer `ColonyWeb` is a deterministic, dimensionless software **prototype**. Its simulated radio, charging, movements, environmental hazards, and repair operations are not measurements of physical hardware and do not establish field safety or achievable wireless power transfer. Earlier Stage One results remain frozen and distinct.
 
-[Methods](docs/METHODS.md) · [Architecture](docs/ARCHITECTURE.md) · [Evidence](docs/EVIDENCE.md) · [Safety](docs/SAFETY.md) · [Roadmap](docs/ROADMAP.md) · [Data catalog](data/README.md) · [Baseline results](data/stage_one_baseline/runs/2026-09-15_relay-policy-v1/)
-
-## What is implemented
-
-| System element | Stage One implementation |
-|---|---|
-| Carrier unit | Root energy and communication anchor |
-| Hive nodes | Deployable radial energy fields and graph-connected relays |
-| Micro-drone swarm | Decentralized agents balancing unexplored space against energy safety |
-| Infrastructure policy | Carrier-only control, fixed relays, and adaptive frontier placement |
-| Robustness test | Nominal operation and loss of the first deployed relay |
-| Evidence pipeline | Per-step telemetry, run summaries, aggregate statistics, manifests, and charts |
-
-## Run the experiment
+## Explore the interactive multi-colony simulator
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
+python -m drone_hive.colony_web_ui
+```
+
+The new graphical console uses the **actual network simulation state** to draw nests, worker bees, inter-node links, bridging eggs, failures and colony-specific telemetry. Click a node on the map or choose it in the inspector, then:
+
+1. **Start exploration:** mission-dependent Worker drones collect simulated reconnaissance data.
+2. **Inject failure:** enter a single node (`A:N2`) or a comma-separated set (`A:N2,A:N3`). Choose communications, energy, hardware, destroyed, or blocked. Multiple nodes can fail together.
+3. **Inspect bridge activation:** a physical fault automatically wakes neighboring midpoint contingency eggs for limited protective communications/refuge. Where geometry allows, the graph reroutes via the eggs.
+4. **Diagnose a communications-only fault:** investigate before broad recall; a timeout initiates conservative colony-local safety retreat.
+5. **Authorize repair:** selected Retriever Handlers simulate bounded maintenance; restoring a node returns eligible eggs to standby.
+6. **Recall colony:** Workers and Handlers route toward a viable operational nest/egg with sufficient energy or enter shelter state.
+
+The window's **Demo: N2 Bridge** and **Comms Failure** buttons reproduce the most important scenarios without additional setup. This UI is a working 2-D tactical visualizer with abstract terrain artwork, **not yet a photorealistic 3-D game engine**.
+
+## Command hierarchy and recursive web
+
+Each independent **Node 0-rooted colony has exactly one Queen at its Node 1**. Multiple colonies can establish communication and rescue assistance routes without transferring leadership authority. Node numbering denotes depth; a branch identifier is needed when a colony has multiple nodes at the same depth.
+
+| Infrastructure | Staffing / purpose | Physical intent |
+|---|---|---|
+| **Node 0** | No Queen; solar generation, main battery, backup supply | Provides a rooted energy resource with finite production and storage |
+| **Node 1** | **Exactly 1 Queen + 3 Handlers + mission-dependent Workers** | Primary command; Handler succession, initial Node 2 assembly, reconnaissance and logistics |
+| **Nodes 2–N** | **Exactly 1 Relay Handler + 1 Retriever Handler + mission-dependent Workers** | Local communications, emergency retrieval, sensor operations, deploy next nest |
+| **Eggs at inter-node midpoints** | Limited temporary **micro-nests**, not Queens | Emergency data relay, limited docking/charging/storage and temporary bypass |
+| **Cross-colony assistance** | Communication and rescue support only | Never permits one colony's Queen to issue another colony's mission commands |
+
+### Three topologies, not one magic network
+
+- **Construction parentage:** the nest that carried and assembled a child.
+- **Communication mesh:** radio links calculated separately using current geometry, link state and available egg bridges.
+- **Energy accounting:** stored energy and tentative parent-to-child transfer, with explicit losses. No unbounded power creation or automatic electrical support from mere radio connectivity.
+
+The physical long-term design uses a **foldable nest chassis plus replaceable battery, communications, contingency, docking, data-storage and local-control modules**. A parent node's Retriever or construction Handler must deliver and commission these components. Expansion requires site suitability, hardware inventory, available return energy, communication and human approval.
+
+## Bee functions
+
+| Bee | Assignment | Proposed sensors / payloads |
+|---|---|---|
+| **Queen** | Only N1, mission command, authorization, coordination, escalation | Local compute, radio, diagnostics, video/telemetry |
+| **N1 Handlers (3)** | Acting Queen succession, initial construction, retrieval/recovery | Diagnostics, communication, cameras, payload/servicing |
+| **Relay Handler** | Mandatory N2+; maintains upstream/downstream communication; may serve docked | Radio, positioning, signal diagnostics, telemetry |
+| **Retriever Handler** | Mandatory N2+; egg placement, nest transport, retrieval, modular repairs | Gripper/cargo interface (proposed), camera, depth, battery reserve |
+| **Scout Worker** | Mission-dependent; survey route, hazards, candidate nest positions | Video, depth, navigation telemetry |
+| **Mapping Worker** | Mission-dependent; reconstruct terrain and geometry | Depth/LiDAR, odometry, mapping records |
+| **Structure-imaging Worker** | Mission-dependent; non-contact archaeological documentation | Calibrated imaging, photogrammetry, timestamps |
+| **Environmental Worker** | Mission-dependent; observe mission conditions | Thermal and environmental sensor records |
+
+A configurable Worker may be fitted with multiple payloads only when realistic mass and energy limits permit. The prototype produces *simulated* recording counters; it does **not** currently capture camera footage, actual LiDAR, or thermal sensor data.
+
+## Midpoint eggs: a redundant temporary infrastructure bridge
+
+Normal corridor: `N1 — E1 — N2 — E2 — N3`
+
+When **N2 fails physically**, E1 and E2 can wake as temporary micro-nests. If both retain capacity and radio range permits their direct link, they form the bypass:
+
+**`N1 ↔ E1 ↔ E2 ↔ N3`**
+
+This retains a reduced-capacity communications corridor while authorized Retrievers restore N2. Eggs are staged at adjacent-node midpoints for shorter intervention distances, rather than traveling from distant root depots. Bridging **may fail** if range, energy, docking, physical access or multiple-node damage overwhelms available reserves. Egg charging capacity is finite; a communications connection never implies electric power transfer.
+
+### Fault response protocol
+
+- **Energy, partial hardware damage, destruction or physical blockage:** suspend unsafe exploration; recall affected colony drones to the nearest viable powered nest or activated egg; preserve recordings; await authorized recovery.
+- **Communication-only anomaly:** investigate the link and alternate mesh, maintain only pre-authorized safe activity, and recall on timeout or unsafe uncertainty.
+- **Single and simultaneous multi-node outages:** activate eligible midpoint micro-nests and calculate topology; do not fabricate a path if no connected sequence exists.
+- **Different-colony assistance:** neighboring colonies may help communicate or rescue but cannot take command.
+- **Node restoration:** commission the repaired nest and return eligible emergency eggs to standby.
+
+## Research lineage and scientific boundary
+
+**Frozen Stage One** remains exactly as collected on **September 15, 2026**: compare carrier-only, fixed-relay and adaptive-frontier infrastructure policies in a dimensionless 2-D simulator. The five-seed results exposed brittle connectivity after a first-relay failure, which motivates this expanded architecture. These historic results are **not evidence that the new eggs, Queens, Handlers, or the full federated web are effective**.
+
+Run the historic, reproducible experiment:
+
+```bash
 python -m drone_hive.cli
-```
-
-For a fast pipeline check:
-
-```bash
-python -m drone_hive.cli --quick
-```
-
-Every run creates a timestamped evidence bundle containing:
-
-```text
-manifest.json                    configuration, environment, and claim boundary
-step_metrics.csv                 time-step telemetry for every condition
-run_summary.csv                  one final record per policy, seed, and scenario
-aggregate_summary.csv            means and sample standard deviations
-policy_comparison.png            coverage and survival comparison
-exploration_trajectories.png     five-seed progression curves
-```
-
-## One-click laboratory
-
-```bash
 python -m drone_hive.dashboard
 ```
 
-The desktop dashboard runs and exports the complete policy × seed × failure matrix without requiring users to remember a command sequence. It exposes seed, duration, and swarm-size controls and opens the latest evidence directory directly.
+Original run: [2026-09-15 relay-policy baseline](data/stage_one_baseline/runs/2026-09-15_relay-policy-v1/). New numerical studies must use a separate `data/colony_recovery/runs/` protocol, randomized failures, held-out seeds, independent controls and explicit confidence intervals.
 
-## Frozen Stage One result
+## Visual walkthrough / demo generation
 
-Across five seeds and 240 steps, the fixed-relay policy mapped 51.6% of the environment while retaining 74.2% of drones. The carrier-only control mapped 43.8% but ended with no active drones. Adaptive-frontier placement retained every drone in nominal operation while mapping 36.2%; loss of its first relay disconnected the chain and collapsed survival. That is a useful negative result: adaptive placement preserved energy but produced a brittle topology in the current configuration.
+```bash
+python -m drone_hive.web_demo
+```
 
-![Stage One policy comparison](data/stage_one_baseline/runs/2026-09-15_relay-policy-v1/policy_comparison.png)
+Generates a **real simulator-driven** animated GIF in `demos/colony-web-operational.gif`, showing the multi-colony network, an N2 physical failure, midpoint egg bridging, response and restoration. In CI this is uploaded as a downloadable build artifact until reviewed and committed. The GIF is a 2-D graphical replay, not a screen recording of the tkinter window or a physical drone test.
 
-Read the [complete dated baseline interpretation](data/stage_one_baseline/runs/2026-09-15_relay-policy-v1/).
+## Documents
 
-## Scientific and safety boundary
+[Full physical architecture](docs/ARCHITECTURE.md) · [Colony mission and design boundaries](docs/COLONY_VISION.md) · [Failure & recovery protocol](docs/FAILURE_RECOVERY.md) · [Legacy methodology](docs/METHODS.md) · [Evidence](docs/EVIDENCE.md) · [Safety](docs/SAFETY.md) · [Roadmap](docs/ROADMAP.md) · [Evidence catalog](data/README.md)
 
-This repository validates a dimensionless computational model and an auditable experimental pipeline. It does **not** demonstrate physical RF/microwave power transfer, flight dynamics, antenna efficiency, thermal safety, collision avoidance, or regulatory compliance. No physical drones are controlled by this code. See [Safety](docs/SAFETY.md) before proposing hardware work.
-
-## Development
+## Verification
 
 ```bash
 ruff check .
 pytest -q
-python -m drone_hive.demo
+python -m drone_hive.cli --quick
 ```
 
-CI tests Python 3.10 and 3.12, runs all unit tests, executes a smoke experiment, and uploads the resulting evidence bundle.
+The new colony web and its tests do not mutate the frozen Stage One dataset. This prototype is a research-and-design demonstration, not a field-operable autonomous drone system. Physical trials would require calibrated power/propagation models, trained operators, qualified hardware and permissions for any protected archaeological site.
 
-## Relationship to Decentralized Swarm Emergence
+## License
 
-The swarm project studies reward-driven coordination under communication constraints. Drone Hive Systems extends that research into energy-and-communication infrastructure: energy availability becomes an environmental coordination signal, and the topology constructed by the swarm becomes part of the experimental outcome.
-
-## Citation and license
-
-See [CITATION.cff](CITATION.cff). Code is released under the [MIT License](LICENSE).
-
-## Experimental colony mission console (separate development branch)
-
-The **original hazardous-terrain mission concept** goes beyond the Stage One energy-relay experiment: visible bee-like drone roles (Queens, workers, handlers), multiple nests, standby contingency eggs, operator-approved emergency deployment, and human-link loss procedures. The first role-based proof of concept is on the colony simulator development branch, not part of the frozen research benchmark.
-
-Run the interactive map on a desktop with Tkinter:
-
-```bash
-python -m drone_hive.colony_ui
-```
-
-Use **Quick assign standard crew** or individually assign each bee's role and nest before starting. Click on the map to place a new hive or standby egg; inject failures and authorize egg activation from the command panel. This is an abstract game-like *prototype*, not physics-calibrated robotics or a completed visual game. The old experimental dashboard remains available as before.
-
-See [full original mission scope and contingency research plan](docs/COLONY_VISION.md). **Existing Stage One evidence is preserved unchanged**; new role-based results must be collected separately under a different experimental protocol.
+MIT. See [LICENSE](LICENSE) and [CITATION.cff](CITATION.cff).
