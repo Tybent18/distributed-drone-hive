@@ -15,18 +15,18 @@
 
 ### Six interactive demonstrations — recorded from the running 3D frontend
 
-The demo selector inside the application switches between six clearly identified scenarios. Each screenshot below is captured from the **real WebGL application** by the frontend CI workflow—not from concept artwork.
+The demo selector inside the application switches between six **interactive six-stage sequences**. Each looping GIF below was assembled from **six distinct frames captured during actual WebGL interaction**, not from a single repeated screenshot or generated concept art.
 
 | Scene | Actual rendered preview | What it demonstrates |
 |---|---|---|
-| 01 · Colony Web | ![Normal 3D colony and bee roles](assets/readme/colony-overview.png) | Federated hives, striped robotic bees, staged eggs and Queen hierarchy |
-| 02 · N2 Egg Bridge | ![Failed N2 bypassed by eggs](assets/readme/colony-bridge.png) | Midpoint temporary micro-nests bridge a physical node failure |
-| 03 · Multi-Failure | ![Two independent colony faults](assets/readme/colony-multi.png) | Simultaneous failures in Colony A and Colony B |
-| 04 · Comms Diagnosis | ![Communications-only interruption](assets/readme/colony-comms.png) | Link uncertainty without treating the node as physically destroyed |
-| 05 · Root Energy | ![Independent energy root outage](assets/readme/colony-energy.png) | Node 0 energy fault with colony-scoped incident response |
-| 06 · Retriever Recovery | ![N2 restored](assets/readme/colony-recovery.png) | Simulated recommissioning and eggs returning to standby |
+| 01 · Colony Web | ![Normal 3D colony and bee roles](assets/readme/colony-overview.gif) | Federated hives, striped robotic bees, staged eggs and Queen hierarchy |
+| 02 · N2 Egg Bridge | ![Failed N2 bypassed by eggs](assets/readme/colony-bridge.gif) | Midpoint temporary micro-nests bridge a physical node failure |
+| 03 · Multi-Failure | ![Two independent colony faults](assets/readme/colony-multi.gif) | Simultaneous failures in Colony A and Colony B |
+| 04 · Comms Diagnosis | ![Communications-only interruption](assets/readme/colony-comms.gif) | Link uncertainty without treating the node as physically destroyed |
+| 05 · Root Energy | ![Independent energy root outage](assets/readme/colony-energy.gif) | Node 0 energy fault with colony-scoped incident response |
+| 06 · Retriever Recovery | ![N2 restored](assets/readme/colony-recovery.gif) | Simulated recommissioning and eggs returning to standby |
 
-To interact with a specific demo, start the frontend locally and open `/?demo=overview`, `/?demo=bridge`, `/?demo=multi`, `/?demo=comms`, `/?demo=energy`, or `/?demo=recovery`. The **demo gallery across the top of the application** switches scenes without restarting.
+To interact with a specific demo, start the frontend locally and open `/?demo=overview`, `/?demo=bridge`, `/?demo=multi`, `/?demo=comms`, `/?demo=energy`, or `/?demo=recovery`. The **demo gallery across the top of the application** switches scenes without restarting. Use **NEXT EVENT** and **PREVIOUS** to advance or rewind a scenario, including detection, temporary egg activation, safe recall, diagnostics, and repair as applicable. The README loops each scenario's six keyframes (roughly eight seconds); the application remains interactive.
 
 **Engineering honesty:** These are scripted frontend visual demonstrations, **not** measured drone flight, actual sensor recordings, or the live Python `ColonyWeb` engine. The visual models intentionally emphasize recognizable bee anatomy, honeycomb nests and deployable egg pods; real drone feasibility remains future work.
 
