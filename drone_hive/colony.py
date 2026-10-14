@@ -246,7 +246,9 @@ class ColonyMission:
                     egg.active = True
                     bee.target_egg = None
                     bee.state = "return_home"
-                    self._event(f"Handler {bee.id} activated egg {egg.id}: relay restored if connected")
+                    self._event(
+                        f"Handler {bee.id} activated egg {egg.id}: relay restored if connected"
+                    )
                 continue
             if bee.state in {"return_home", "return_root"}:
                 target = self.hives[0] if bee.state == "return_root" else home
@@ -277,7 +279,11 @@ class ColonyMission:
                     self.mapped.add((int(bee.x), int(bee.y)))
             if bee.state == "docked" and self.is_hive_connected(bee.home):
                 bee.energy = min(100.0, bee.energy + 0.5)
-        if self.pending_egg is None and self.operator_connected and not any(e.deploying for e in self.eggs):
+        if (
+            self.pending_egg is None
+            and self.operator_connected
+            and not any(e.deploying for e in self.eggs)
+        ):
             found = self._find_repair_egg()
             if found is not None:
                 self.pending_egg = found
