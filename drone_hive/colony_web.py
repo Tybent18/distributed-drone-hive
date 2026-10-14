@@ -171,7 +171,11 @@ class ColonyWeb:
     def _add_bee(
         self, colony: str, home: str, role: str, mission: str, sensors: tuple[str, ...]
     ) -> None:
-        number = sum(1 for bee in self.bees.values() if bee.colony == colony) + 1
+        number = max(
+            (int(bee.key.split("B")[-1]) for bee in self.bees.values()
+             if bee.colony == colony),
+            default=0,
+        ) + 1
         key = f"{colony}:B{number:02d}"
         nest = self.nests[home]
         self.bees[key] = Bee(key, colony, home, role, mission, sensors, nest.x, nest.y)
