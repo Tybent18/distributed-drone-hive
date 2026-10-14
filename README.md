@@ -15,7 +15,7 @@
 
 ### Six interactive demonstrations — recorded from the running 3D frontend
 
-The demo selector inside the application switches between six **interactive six-stage sequences**. Each looping GIF below was assembled from **six distinct frames captured during actual WebGL interaction**, not from a single repeated screenshot or generated concept art.
+The demo selector inside the application switches between six **interactive six-stage sequences**. Each looping GIF below was assembled from **three distinct WebGL frames (beginning, midpoint and final state) captured during actual application interaction**, not from a single repeated screenshot or generated concept art.
 
 | Scene | Actual rendered preview | What it demonstrates |
 |---|---|---|
@@ -26,7 +26,7 @@ The demo selector inside the application switches between six **interactive six-
 | 05 · Root Energy | ![Independent energy root outage](assets/readme/colony-energy.gif) | Node 0 energy fault with colony-scoped incident response |
 | 06 · Retriever Recovery | ![N2 restored](assets/readme/colony-recovery.gif) | Simulated recommissioning and eggs returning to standby |
 
-To interact with a specific demo, start the frontend locally and open `/?demo=overview`, `/?demo=bridge`, `/?demo=multi`, `/?demo=comms`, `/?demo=energy`, or `/?demo=recovery`. The **demo gallery across the top of the application** switches scenes without restarting. Use **NEXT EVENT** and **PREVIOUS** to advance or rewind a scenario, including detection, temporary egg activation, safe recall, diagnostics, and repair as applicable. The README loops each scenario's six keyframes (roughly eight seconds); the application remains interactive.
+To interact with a specific demo, start the frontend locally and open `/?demo=overview`, `/?demo=bridge`, `/?demo=multi`, `/?demo=comms`, `/?demo=energy`, or `/?demo=recovery`. The **demo gallery across the top of the application** switches scenes without restarting. Use **NEXT EVENT** and **PREVIOUS** to advance or rewind a scenario, including detection, temporary egg activation, safe recall, diagnostics, and repair as applicable. The README loops three sampled keyframes per scenario (roughly six seconds), while the application offers all six interactive stages; the application remains interactive.
 
 **Engineering honesty:** These are scripted frontend visual demonstrations, **not** measured drone flight, actual sensor recordings, or the live Python `ColonyWeb` engine. The visual models intentionally emphasize recognizable bee anatomy, honeycomb nests and deployable egg pods; real drone feasibility remains future work.
 
