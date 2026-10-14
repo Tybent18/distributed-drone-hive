@@ -481,7 +481,7 @@ class ColonyWeb:
                 nest.communications = "disconnected"
                 if kind == "energy":
                     self.energy_failure_losses += nest.energy
-                    self._energy_event("fault_loss", key, "damaged", nest.energy, 0)
+                    self._energy_event("fault_loss", key, "damaged", nest.energy, 0, nest.energy)
                     nest.energy = 0
                 affected.add(key)
                 self._log(f"{key}: {kind.upper()} FAILURE; emergency recall")
