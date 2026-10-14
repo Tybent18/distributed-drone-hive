@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from math import isclose
 
+import pytest
+
 from drone_hive.colony_web import ColonyWeb
 
 
