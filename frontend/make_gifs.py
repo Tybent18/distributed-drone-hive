@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 INPUT = Path("demos/webgl-frames")
 OUTPUT = Path("assets/readme")
