@@ -11,3 +11,7 @@
 .egg-label{border-color:#c28aef}.egg-label span{color:#d8acf2}
 .egg-label.active{box-shadow:0 0 15px #bb80ec99;border-color:#e3b2ff}
 @media(max-width:1280px){.demo-choice{font-size:9px;padding:7px}}
+
+.timeline{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#10293d;border-top:1px solid #356781}
+.timeline-copy{flex:1;min-width:0}.timeline-copy b{display:block;font-size:10px;color:#f1c67a}.timeline-copy span{display:block;margin-top:3px;font-size:10px;color:#b4d7e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.timeline button{white-space:nowrap}
