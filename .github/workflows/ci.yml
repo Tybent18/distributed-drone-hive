@@ -26,6 +26,14 @@ jobs:
       - run: pytest -q
       - name: Smoke-test evidence pipeline
         run: python -m drone_hive.cli --quick --output results/ci-smoke
+      - name: Render model-driven colony web demo
+        if: matrix.python-version == '3.12'
+        run: python -m drone_hive.web_demo
+      - uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12'
+        with:
+          name: drone-hive-colony-web-animated-demo
+          path: demos/colony-web-operational.gif
       - uses: actions/upload-artifact@v4
         with:
           name: drone-hive-evidence-py${{ matrix.python-version }}
