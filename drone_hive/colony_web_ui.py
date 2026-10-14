@@ -175,7 +175,7 @@ class ColonyWebConsole(tk.Tk):
         self.events_view.pack(fill="both", expand=True, pady=(0, 6))
         self.summary = self._label(bottom, "", color=MUTED, bold=False, size=10)
         self.summary.pack(side="right", padx=15)
-        self._label(self, "ENGINEERING PROTOTYPE: fictional terrain, radio and power; not flight-certified",
+        self._label(self, "ABSTRACT MODEL ONLY • NOT FLIGHT-CERTIFIED",
                     color=MUTED, size=9, bold=False).pack(anchor="w", padx=14)
 
         for col in sorted({n.colony for n in self.model.nests.values()}):
