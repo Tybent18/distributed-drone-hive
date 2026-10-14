@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
@@ -70,7 +71,7 @@ def generate(path: Path = Path("demos/colony-web-operational.gif")) -> Path:
             ax.add_patch(plt.Circle((x, y), radius, fill=False,
                                     linewidth=3, color="#8e7963", alpha=.8))
             for i in range(10):
-                from math import sin, cos, pi
+                from math import cos, pi, sin
                 xp = x + radius * cos(i * 2 * pi / 10)
                 yp = y + radius * sin(i * 2 * pi / 10)
                 ax.add_patch(plt.Rectangle((xp-3, yp-6), 6, 12,
