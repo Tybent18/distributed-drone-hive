@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+from hashlib import sha256
 from math import hypot
 from random import Random
 
@@ -45,6 +46,26 @@ class Nest:
     recordings_mb: float = 0.0
 
 
+@dataclass(frozen=True)
+class SensorRecord:
+    """Traceable synthetic observation metadata, NOT a calibrated sensor reading."""
+
+    sensor_id: str
+    timestamp: str  # deterministic simulation tick, not wall-clock UTC
+    checksum: str  # SHA-256 of synthetic event metadata, not physical sensor bytes
+    bee_id: str
+    colony: str
+    node: str
+    task: str
+    sensor_type: str
+    sequence: int
+    x: float
+    y: float
+    payload_bytes: int
+    synthetic: bool = True
+    calibrated: bool = False
+
+
 @dataclass
 class Bee:
     key: str
@@ -59,6 +80,7 @@ class Bee:
     state: str = "docked"
     destination: str | None = None
     recordings_mb: float = 0.0
+    sensor_records: list[SensorRecord] = field(default_factory=list)
 
 
 @dataclass
@@ -103,6 +125,9 @@ class ColonyWeb:
         self.pending_repairs: dict[str, int] = {}
         self.communication_timeout = 7
         self._lost_since: dict[str, int] = {}
+        self.authority_epoch: dict[str, int] = {}
+        self.authority_delegates: dict[str, tuple[str, int]] = {}
+        self.energy_failure_losses: float = 0.0
         for i in range(colonies):
             self._seed_colony(chr(65 + i), i)
         self._make_assistance_routes()
@@ -194,7 +219,52 @@ class ColonyWeb:
         ]
         if len(queens) != 1 or queens[0].home != f"{colony}:N1":
             raise ValueError("Exactly one Queen is required at colony Node 1")
+        node = self.nests[queens[0].home]
+        if (queens[0].state == "disabled"
+            or node.health != "operational"
+            or node.energy <= 0
+            or node.communications != "online"):
+            raise ValueError(f"Queen unavailable for colony {colony}")
         return queens[0]
+
+    def command_authority(self, colony: str) -> tuple[str, int] | None:
+        """Current local command identity and fencing epoch; never a foreign colony."""
+        epoch = self.authority_epoch.get(colony, 0)
+        try:
+            queen = self.queen_for(colony)
+            if epoch == 0 or colony not in self.authority_delegates:
+                return (queen.key, epoch)
+        except ValueError:
+            pass
+        delegate = self.authority_delegates.get(colony)
+        if delegate and delegate[1] == epoch:
+            bee = self.bees.get(delegate[0])
+            if bee and bee.colony == colony and bee.home == f"{colony}:N1" and (
+                bee.role == "handler" and bee.state != "disabled"
+            ):
+                node = self.nests[bee.home]
+                if node.health == "operational" and node.energy > 0:
+                    return delegate
+        return None
+
+    def authorize_delegate(self, colony: str, handler_key: str) -> tuple[str, int]:
+        """Explicit human-authorized local succession; previous epoch is fenced."""
+        if not self.operator_online:
+            raise PermissionError("Human authorization required")
+        candidate = self.bees.get(handler_key)
+        if not candidate or candidate.colony != colony or (
+            candidate.home != f"{colony}:N1" or candidate.role != "handler"
+            or candidate.state == "disabled"
+        ):
+            raise ValueError("Only an available local Node 1 Handler can be delegated")
+        if self.nests[candidate.home].health != "operational":
+            raise ValueError("The delegation station is unavailable")
+        self.authority_epoch[colony] = self.authority_epoch.get(colony, 0) + 1
+        token = (handler_key, self.authority_epoch[colony])
+        self.authority_delegates[colony] = token
+        self._log(f"Colony {colony}: authorized local Handler {handler_key} "
+                  f"for fenced epoch {token[1]}")
+        return token
 
     def handlers_for(self, nest_key: str) -> dict[str, int]:
         handlers: dict[str, int] = {}
@@ -339,6 +409,7 @@ class ColonyWeb:
                 nest.health = kind
                 nest.communications = "disconnected"
                 if kind == "energy":
+                    self.energy_failure_losses += nest.energy
                     nest.energy = 0
                 affected.add(key)
                 self._log(f"{key}: {kind.upper()} FAILURE; emergency recall")
@@ -369,14 +440,22 @@ class ColonyWeb:
         nest = self.nests[key]
         nest.health = "operational"
         nest.communications = "online"
-        nest.energy = max(35.0, nest.energy)
+        # Physical restoration is not a source of stored battery energy.
+        # In particular, a power-failed nest remains dark until charged from
+        # a separately accounted supply or replaced with charged modules.
+        nest.communications = "online" if nest.energy > 0 else "disconnected"
         self.pending_repairs.pop(key, None)
         self._lost_since.pop(key, None)
-        self._log(f"{key}: repair commissioned; local service restored")
+        self._log(
+            f"{key}: hardware serviced; "
+            + ("powered service restored" if nest.energy > 0 else "awaiting finite power")
+        )
         for egg in self.eggs.values():
             if egg.left == key or egg.right == key:
-                if self.nests[egg.left].health == "operational" and (
-                    self.nests[egg.right].health == "operational"
+                if all(
+                    self.nests[end].health == "operational"
+                    and self.nests[end].energy > 0
+                    for end in (egg.left, egg.right)
                 ):
                     egg.mode = "standby"
                     self._log(f"{egg.key}: micro-nest returned to standby")
@@ -394,23 +473,59 @@ class ColonyWeb:
         ]
         return destinations
 
-    def recall(self, colony: str) -> None:
-        destinations = self._safe_destinations(colony)
+    def dock_occupancy(self) -> dict[str, int]:
+        """Reservations include both arrived drones and those assigned en route."""
+        counts: dict[str, int] = {}
         for bee in self.bees.values():
-            if bee.colony != colony or bee.state == "disabled":
+            if bee.state not in ("docked", "egg_refuge", "returning"):
                 continue
-            candidates = [
+            key = bee.destination or bee.home
+            counts[key] = counts.get(key, 0) + 1
+        return counts
+
+    def recall(self, colony: str) -> None:
+        """Allocate finite refuge/docking slots without overbooking.
+
+        A stationary drone occupying a viable nest takes one slot. A returning
+        drone reserves a slot at dispatch time; other colonies' reservations
+        remain in force. Overflow units shelter rather than inventing a pad.
+        """
+        destinations = dict(self._safe_destinations(colony))
+        reserved: dict[str, int] = {key: 0 for key in destinations}
+        pending: list[Bee] = []
+        for bee in sorted(self.bees.values(), key=lambda item: item.key):
+            key = bee.destination or bee.home
+            if bee.colony != colony:
+                if bee.state in ("docked", "egg_refuge", "returning") and key in reserved:
+                    reserved[key] += 1
+                continue
+            if bee.state == "disabled":
+                continue
+            if bee.state in ("docked", "egg_refuge") and key in destinations and (
+                self.distance(bee, destinations[key]) <= 3.5
+            ) and reserved[key] < destinations[key].docking_slots:
+                reserved[key] += 1
+                continue
+            pending.append(bee)
+
+        for bee in sorted(pending, key=lambda item: (item.energy, item.key)):
+            choices = [
                 (self.distance(bee, obj), key)
-                for key, obj in destinations
-                if self.distance(bee, obj) * 0.45 + RETURN_RESERVE <= bee.energy
+                for key, obj in destinations.items()
+                if reserved[key] < obj.docking_slots and (
+                    self.distance(bee, obj) * 0.45 + RETURN_RESERVE <= bee.energy
+                )
             ]
-            if candidates:
-                bee.destination = min(candidates)[1]
+            if choices:
+                _, key = min(choices)
+                reserved[key] += 1
+                bee.destination = key
                 bee.state = "returning"
             else:
-                bee.state = "sheltering"
                 bee.destination = None
-        self._log(f"Colony {colony}: recall to viable nest/egg or safe shelter")
+                bee.state = "sheltering"
+        self._log(f"Colony {colony}: reserved viable dock slots; "
+                  "overflow units sheltered")
 
     def request_assistance(self, from_colony: str, to_colony: str) -> bool:
         if from_colony == to_colony:
@@ -485,10 +600,14 @@ class ColonyWeb:
                     bee.y += (target.y - bee.y) * step / distance
                 bee.energy = max(0, bee.energy - step * 0.45)
                 if distance <= 3.5:
-                    bee.state = "docked"
                     if isinstance(target, Egg):
-                        bee.state = "egg_refuge"
-                    bee.recordings_mb = max(0.0, bee.recordings_mb - 0.5)
+                        valid = target.mode in ("bridging", "refuge") and target.energy >= 8
+                    else:
+                        valid = target.health == "operational" and target.energy >= 8
+                    bee.state = ("egg_refuge" if isinstance(target, Egg) else "docked"
+                                 ) if valid else "sheltering"
+                    if not valid:
+                        bee.destination = None
                 continue
             if bee.state in ("docked", "egg_refuge"):
                 home_obj = destinations.get(bee.destination or bee.home)
@@ -503,7 +622,22 @@ class ColonyWeb:
             bee.x += self.rng.uniform(-2.0, 2.0)
             bee.y += self.rng.uniform(-2.0, 2.0)
             bee.energy = max(0.0, bee.energy - 0.30)
-            bee.recordings_mb += 0.8 if "video" in bee.sensors else 0.45
+            sensor = next((s for s in bee.sensors if s != "telemetry"), bee.sensors[0])
+            size = 800_000 if "video" in bee.sensors else 450_000
+            sequence = len(bee.sensor_records) + 1
+            x, y = round(bee.x, 5), round(bee.y, 5)
+            stamp = f"sim-tick-{self.tick:06d}"
+            content = (f"{bee.key}|{bee.home}|{bee.mission}|{sensor}|"
+                       f"{sequence}|{stamp}|{x:.5f}|{y:.5f}|{size}")
+            bee.sensor_records.append(SensorRecord(
+                sensor_id=f"{bee.key}:{sensor}",
+                timestamp=stamp,
+                checksum=sha256(content.encode("utf-8")).hexdigest(),
+                bee_id=bee.key, colony=bee.colony, node=bee.home, task=bee.mission,
+                sensor_type=sensor, sequence=sequence, x=x, y=y,
+                payload_bytes=size,
+            ))
+            bee.recordings_mb += size / 1_000_000
             if bee.energy <= RETURN_RESERVE:
                 self.recall(bee.colony)
 
@@ -548,6 +682,9 @@ class ColonyWeb:
             "eggs_bridging": sum(e.mode == "bridging" for e in self.eggs.values()),
             "drones": len(self.bees),
             "returning": sum(b.state == "returning" for b in self.bees.values()),
+            "sheltering": sum(b.state == "sheltering" for b in self.bees.values()),
+            "sensor_records": sum(len(b.sensor_records) for b in self.bees.values()),
+            "energy_failure_losses": round(self.energy_failure_losses, 3),
             "recorded_mb": round(sum(b.recordings_mb for b in self.bees.values()), 2),
             "links": len(self.communication_links()),
         }
