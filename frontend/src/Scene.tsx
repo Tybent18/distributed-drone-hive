@@ -1,8 +1,9 @@
-import {Canvas,useFrame} from '@react-three/fiber';
+import {Canvas} from '@react-three/fiber';
 import {OrbitControls,Line,Html,Sparkles} from '@react-three/drei';
-import {useMemo,useRef} from 'react';
+import {useMemo} from 'react';
 import * as THREE from 'three';
 import {hives,eggs,hivesById,eggsById,activeEggs,bridge,type State,type Hive} from './model';
+import {BeeDrone,HiveStructure,EggPod} from './Models';
 const palette:Record<string,string>={A:'#ffce69',B:'#4de7ef',C:'#4de9a7'};
 function Terrain(){
  const ground=useMemo(()=>{const g=new THREE.PlaneGeometry(43,38,60,60);g.rotateX(-Math.PI/2);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);p.setY(i,Math.sin(x*.6)*Math.cos(z*.48)*.15-.16)}g.computeVertexNormals();return g},[]);
@@ -16,32 +17,26 @@ function Terrain(){
  <mesh rotation={[-Math.PI/2,0,-.2]} position={[15,.035,5]}><planeGeometry args={[8,5]}/><meshBasicMaterial color="#e83150" transparent opacity={.22}/></mesh>
  <Sparkles count={48} scale={[40,3,32]} size={1.2} speed={.2} color="#ffdb91" opacity={.25}/></group>
 }
-function Bee({x,z,i,type}:{x:number;z:number;i:number;type:'queen'|'handler'|'worker'}){
- const ref=useRef<THREE.Group>(null);useFrame(({clock})=>{if(ref.current){ref.current.position.y=1.35+Math.sin(clock.elapsedTime*2+i)*.15;ref.current.rotation.y=clock.elapsedTime*.24+i}});
- const color=type==='queen'?'#ffd465':type==='handler'?'#d490fc':'#57e7f9';
- return <group ref={ref} position={[x,1.35,z]} scale={type==='queen'?.65:.38}>
- <mesh rotation={[0,0,Math.PI/2]}><capsuleGeometry args={[.27,.6,5,9]}/><meshStandardMaterial color="#202e36" metalness={.65}/></mesh>
- {[-.3,0,.3].map((v,j)=><mesh key={j} position={[.04,0,v]} rotation={[0,0,Math.PI/2]}><torusGeometry args={[.31,.06,8,20]}/><meshStandardMaterial color={color} emissive={color} emissiveIntensity={.4}/></mesh>)}
- {[-1,1].map(d=><mesh key={d} position={[d*.4,.24,.05]}><sphereGeometry args={[.34,12,10]}/><meshStandardMaterial color="#bbf5ff" transparent opacity={.61} emissive="#5ce0ff" emissiveIntensity={.3}/></mesh>)}</group>
-}
 function Node({n,s,selected,choose}:{n:Hive;s:State;selected:boolean;choose:(v:string)=>void}){
  const fault=s.failure[n.id],physical=fault&&fault!=='communications';const color=physical?'#ff6274':n.level<=1?'#ffca61':palette[n.colony];
  return <group position={[n.x,0,n.z]} onClick={e=>{e.stopPropagation();choose(n.id)}}>
- <mesh position={[0,.15,0]} castShadow><cylinderGeometry args={[n.level<=1?.95:.72,1,.33,6]}/><meshStandardMaterial color="#162c3b" metalness={.8} roughness={.25}/></mesh>
- <mesh position={[0,.38,0]}><cylinderGeometry args={[.53,.65,.3,6]}/><meshStandardMaterial color={physical?'#6b2639':'#326278'} emissive={color} emissiveIntensity={.1}/></mesh>
- {n.level<=1&&<mesh position={[0,1.1,0]}><cylinderGeometry args={[.08,.08,1.15,8]}/><meshStandardMaterial color={color} emissive={color} emissiveIntensity={.75}/></mesh>}
- <mesh position={[0,.04,0]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[1,1.05,48]}/><meshBasicMaterial color={selected?'white':color} side={THREE.DoubleSide}/></mesh>
- <pointLight color={color} intensity={selected?2.4:1} distance={4}/>
- {n.level>0&&Array.from({length:Math.min(4,n.workers.length+(n.level===1?2:2))},(_,i)=>{const a=i*Math.PI*2/4;return <Bee key={i} x={Math.cos(a)*1.5} z={Math.sin(a)*1.5} i={i+n.level} type={n.level===1&&i===0?'queen':i<2?'handler':'worker'}/>})}
- <Html position={[0,2.3,0]} center distanceFactor={15} style={{pointerEvents:'none'}}><div className={'object-label '+(physical?'danger':'')}><b>{n.id}</b><span>{physical?'FAILED':fault==='communications'?'LINK ANOMALY':n.level===0?'ENERGY ROOT':n.level===1?'QUEEN HIVE':'FORWARD NEST'}</span></div></Html>
+ <HiveStructure level={n.level} tint={color} failed={Boolean(physical)}/>
+ {selected&&<mesh position={[0,.025,0]} rotation={[-Math.PI/2,0,0]}>
+   <ringGeometry args={[1.55,1.62,48]}/><meshBasicMaterial color="#ffffff" side={THREE.DoubleSide}/>
+ </mesh>}
+ {n.level>0&&Array.from({length:n.level===1?3:2},(_,i)=>{
+  const a=i*Math.PI*2/(n.level===1?3:2);
+  return <BeeDrone key={i} x={Math.cos(a)*2.05} z={Math.sin(a)*2.05}
+    index={i+n.level*7} kind={n.level===1&&i===0?'queen':i===1?'handler':'worker'}
+    scale={n.level===1&&i===0?.77:.67} />;
+ })}
+ <Html position={[0,2.05,0]} center distanceFactor={15} style={{pointerEvents:'none'}}><div className={'object-label '+(physical?'danger':'')}><b>{n.id}</b><span>{physical?'FAILED':fault==='communications'?'LINK ANOMALY':n.level===0?'ENERGY ROOT':n.level===1?'QUEEN HIVE':'FORWARD NEST'}</span></div></Html>
  </group>
 }
 function Egg({id,x,z,active,choose}:{id:string;x:number;z:number;active:boolean;choose:(v:string)=>void}){
  return <group position={[x,.08,z]} onClick={e=>{e.stopPropagation();choose(id)}}>
- <mesh position={[0,.5,0]}><icosahedronGeometry args={[.42,1]}/><meshStandardMaterial color={active?'#e9b4ff':'#7963a3'} emissive={active?'#bc66ff':'#413363'} emissiveIntensity={active?1.1:.3}/></mesh>
- <mesh position={[0,.02,0]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[.6,.66,32]}/><meshBasicMaterial color={active?'#d994ff':'#665477'} side={THREE.DoubleSide}/></mesh>
- {active&&<pointLight color="#d28bff" intensity={2.7} distance={4}/>}
- <Html position={[0,1.15,0]} center distanceFactor={17} style={{pointerEvents:'none'}}><div className={'egg-label '+(active?'active':'')}><b>{id}</b><span>{active?'BRIDGE':'STANDBY'}</span></div></Html>
+ <EggPod active={active}/>
+ <Html position={[0,1.95,0]} center distanceFactor={17} style={{pointerEvents:'none'}}><div className={'egg-label '+(active?'active':'')}><b>{id}</b><span>{active?'BRIDGE':'STANDBY'}</span></div></Html>
  </group>
 }
 function Links({s}:{s:State}){
