@@ -10,7 +10,7 @@ import math
 import tkinter as tk
 from tkinter import ttk
 
-from .colony_web import ColonyWeb, FAILURES
+from .colony_web import FAILURES, ColonyWeb
 
 BG = "#06131f"
 PANEL = "#0b2333"
@@ -162,7 +162,7 @@ class ColonyWebConsole(tk.Tk):
             side="left", padx=3
         )
         self._button(controls, "↻ RESET", self.reset).pack(side="left", padx=3)
-        self._label(controls, "NODE 0: ENERGY  |  NODE 1: QUEEN + 3 HANDLERS  |  N2+: RELAY + RETRIEVER + WORKERS",
+        self._label(controls, "N0 ENERGY | N1 QUEEN + 3 HANDLERS | N2+ RELAY + RETRIEVER + WORKERS",
                     color=MUTED, bold=False, size=9).pack(side="right", padx=5)
 
         bottom = tk.Frame(self, bg=PANEL)
@@ -175,11 +175,13 @@ class ColonyWebConsole(tk.Tk):
         self.events_view.pack(fill="both", expand=True, pady=(0, 6))
         self.summary = self._label(bottom, "", color=MUTED, bold=False, size=10)
         self.summary.pack(side="right", padx=15)
-        self._label(self, "ENGINEERING PROTOTYPE • simulated terrain/range/power; not flight-certified",
+        self._label(self, "ENGINEERING PROTOTYPE: fictional terrain, radio and power; not flight-certified",
                     color=MUTED, size=9, bold=False).pack(anchor="w", padx=14)
 
         for col in sorted({n.colony for n in self.model.nests.values()}):
-            parent = self.tree.insert("", "end", iid=f"COL:{col}", text=f"◈ COLONY {col}", open=True)
+            parent = self.tree.insert(
+                "", "end", iid=f"COL:{col}", text=f"◈ COLONY {col}", open=True
+            )
             for nest in self.model.nests.values():
                 if nest.colony == col:
                     icon = "☀" if nest.level == 0 else "♛" if nest.level == 1 else "⬡"
@@ -374,6 +376,10 @@ class ColonyWebConsole(tk.Tk):
                       anchor="e", fill=CYAN, font=("Arial", 9, "bold"))
         selected_node = m.nests[selected]
         drone_staff = [b for b in m.bees.values() if b.home == selected]
+        extra_handlers = sum(
+            bee.role == "handler" and bee.mission not in ("relay", "retriever")
+            for bee in drone_staff
+        )
         self.info.config(state="normal")
         self.info.delete("1.0", "end")
         self.info.insert("end", (
@@ -388,7 +394,7 @@ class ColonyWebConsole(tk.Tk):
             f"RELAY HANDLER: {sum(b.mission == 'relay' for b in drone_staff)}\n"
             f"RETRIEVER: {sum(b.mission == 'retriever' for b in drone_staff)}\n"
             f"OTHER HANDLERS: "
-            f"{sum(b.role == 'handler' and b.mission not in ('relay','retriever') for b in drone_staff)}\n"
+            f"{extra_handlers}\n"
             f"WORKERS: {sum(b.role == 'worker' for b in drone_staff)}\n"
             f"MISSIONS: {', '.join(selected_node.workers) or 'Energy operations'}\n\n"
             f"FOLDABLE NEST / MODULAR POWER\n"
