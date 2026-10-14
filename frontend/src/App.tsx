@@ -1,12 +1,15 @@
 import {useEffect,useState} from 'react';
 import {Scene} from './Scene';
 import {hives,eggs,hivesById,eggsById,colonies,State,Failure,start,inject,restore,activeEggs,bridge} from './model';
+import {demos,scenario,type DemoId} from './demos';
 import './styles.css';
 const failureTypes:Failure[]=['hardware','communications','energy','destroyed','blocked'];
 function App(){
  const [state,setState]=useState<State>(start);const [selected,setSelected]=useState('A:N2');
+ const [demo,setDemo]=useState<DemoId>('overview');
+ const pickDemo=(id:DemoId)=>{setDemo(id);setState(scenario(id));setSelected(demos.find(x=>x.id===id)!.selection)};
  const [kind,setKind]=useState<Failure>('hardware');const [multi,setMulti]=useState(false);const [dialog,setDialog]=useState(false);
- useEffect(()=>{if(location.search.includes('demo=bridge'))setState(s=>inject(s,['A:N2'],'hardware'))},[]);
+ useEffect(()=>{const params=new URLSearchParams(location.search);const id=params.get('demo');if(demos.some(x=>x.id===id))pickDemo(id as DemoId)},[]);
  useEffect(()=>{const timer=setInterval(()=>setState(s=>s.run?{...s,tick:s.tick+1}:s),850);return ()=>clearInterval(timer)},[]);
  const node=hivesById[selected],egg=eggsById[selected],active=activeEggs(state),paths=bridge(state);
  const target=node?.id??'A:N2';
@@ -15,21 +18,22 @@ function App(){
  <header className="header"><div className="brand"><span>⬡</span><div><h1>DRONE HIVE <em>/ COLONY OPS</em></h1><small>HAZARDOUS TERRAIN RECON · FEDERATED EXPANSION NETWORK</small></div></div>
  <div className="expedition">◈ &nbsp;<b>GÖBEKLI TEPE–INSPIRED EXPEDITION</b><small>PROCEDURAL 3D TERRAIN · NON-INVASIVE RESEARCH CONCEPT</small></div>
  <div className="indicator"><b>● 3D LIVE VIEW</b><small>CONCEPT SIMULATION</small></div></header>
+ <div className="demo-strip" aria-label="Demonstration gallery"><span>DEMO GALLERY</span>{demos.map(d=><button key={d.id} title={d.detail} className={demo===d.id?"demo-choice current":"demo-choice"} onClick={()=>pickDemo(d.id)}>{d.title}</button>)}</div>
  <div className="layout"><aside className="left panel"><h2>⬡ COLONY HIERARCHY</h2><div className="trees">
  {colonies.map(c=><div key={c} className="colony"><h3><i style={{color:c==='A'?'#ffd074':c==='B'?'#68dbf5':'#60e7aa'}}>⬡</i> COLONY {c}<small>{Object.keys(state.failure).some(id=>id.startsWith(c+':'))?'INCIDENT':'ONLINE'}</small></h3>
  {hives.filter(n=>n.colony===c).map(n=><button key={n.id} onClick={()=>setSelected(n.id)} className={'treeitem '+(selected===n.id?'chosen':'')+(state.failure[n.id]?' failed':'')}><span>{n.level===0?'☀':n.level===1?'♛':'⬡'}</span><b>N{n.level}</b> {n.level===0?'Energy Root':n.level===1?'Queen Hive':'Expansion Hive'} {state.failure[n.id]&&<i>!</i>}</button>)}
  {eggs.filter(e=>e.colony===c).map(e=><button key={e.id} onClick={()=>setSelected(e.id)} className={'treeitem eggitem '+(selected===e.id?'chosen':'')}><span>◈</span><b>{e.id.split(':')[1]}</b> {active.includes(e.id)?'BRIDGING':'Midpoint Egg'}</button>)}
  </div>)}</div><section className="role-index"><h2>✦ BEE FUNCTIONS</h2><p><b>♛ Queen</b><small>One N1 coordinator per independent colony</small></p><p><b>✥ Relay Handler</b><small>Mandatory N2+ communications</small></p><p><b>✥ Retriever</b><small>Mandatory N2+ repairs, eggs, assembly</small></p><p><b>✦ Workers</b><small>Mission-dependent survey and recording</small></p></section></aside>
  <section className="middle"><div className="stage"><Scene state={state} selected={selected} choose={setSelected}/>
- <div className="overlay top"><small>TACTICAL CAMERA / 3D WEB</small><strong>ARCHAEOLOGICAL EXPEDITION</strong><span>Orbit • zoom • inspect nodes and contingency eggs</span></div>
+ <div className="overlay top"><small>TACTICAL CAMERA / 3D WEB · {demos.find(x=>x.id===demo)?.title}</small><strong>ARCHAEOLOGICAL EXPEDITION</strong><span>{demos.find(x=>x.id===demo)?.detail} · Orbit / zoom / inspect</span></div>
  <div className="overlay legend"><p><i className="key green"/> Normal colony link</p><p><i className="key yellow"/> Cross-colony assistance</p><p><i className="key purple"/> Egg emergency bridge</p><p><i className="key red"/> Failed infrastructure</p></div>
  <div className={'overlay mission '+(paths?'danger':'')}><strong>{paths?'✦ EMERGENCY EGG BRIDGE ACTIVE':Object.keys(state.failure).length?'⚠ INCIDENT RESPONSE':'◈ MULTI-COLONY WEB ONLINE'}</strong><span>{paths?'N1 ↔ E1 ↔ E2 ↔ N3 · limited temporary corridor':Object.keys(state.failure).length?'Contain faults · select a node to inspect':'Independent Queens · shared communication / rescue only'}</span></div>
  </div><div className="toolbar"><h2>MISSION CONTROLS <small>/ {state.run?'RUNNING':'PAUSED'}</small></h2><div className="buttons">
  <button className="btn play" onClick={()=>setState(s=>({...s,run:!s.run}))}>{state.run?'Ⅱ PAUSE':'▶ RESUME'}</button>
- <button className="btn violet" onClick={()=>perform(['A:N2'],'hardware')}>◈ DEMO: N2 BRIDGE</button>
+ <button className="btn violet" onClick={()=>pickDemo('bridge')}>◈ DEMO: N2 BRIDGE</button>
  <button className="btn red" onClick={()=>setDialog(true)}>⚠ INJECT FAILURE</button>
  <button className="btn amber" onClick={()=>setState(s=>({...s,events:[...s.events,'COLONY '+(node?.colony??egg?.colony??'A')+': RECALL TO SAFE NEST / EGG']}))}>↶ RECALL COLONY</button>
- <button className="btn" onClick={()=>setState(s=>restore(s,target))}>↻ RESTORE</button><button className="btn" onClick={()=>{setState(start());setSelected('A:N2')}}>RESET</button>
+ <button className="btn" onClick={()=>setState(s=>restore(s,target))}>↻ RESTORE</button><button className="btn" onClick={()=>pickDemo('overview')}>RESET</button>
  </div></div></section>
  <aside className="right panel"><h2>⌕ NODE INSPECTOR</h2><select className="picker" value={selected} onChange={e=>setSelected(e.target.value)}>{hives.map(n=><option key={n.id} value={n.id}>{n.id} · {n.level===0?'Energy Root':n.level===1?'Queen Hive':'Forward Nest'}</option>)}{eggs.map(e=><option key={e.id} value={e.id}>{e.id} · Midpoint Egg</option>)}</select>
  {node?<><div className={'selection '+(state.failure[node.id]?'down':'')}><span className="hex">⬡</span><div><b>{node.id} · {node.level===0?'ENERGY ROOT':node.level===1?'QUEEN HIVE':'FORWARD NEST'}</b><small>{state.failure[node.id]?'FAULT: '+state.failure[node.id].toUpperCase():'NOMINAL OPERATIONS'}</small></div></div>
