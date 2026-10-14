@@ -82,3 +82,17 @@ The swarm project studies reward-driven coordination under communication constra
 ## Citation and license
 
 See [CITATION.cff](CITATION.cff). Code is released under the [MIT License](LICENSE).
+
+## Experimental colony mission console (separate development branch)
+
+The **original hazardous-terrain mission concept** goes beyond the Stage One energy-relay experiment: visible bee-like drone roles (Queens, workers, handlers), multiple nests, standby contingency eggs, operator-approved emergency deployment, and human-link loss procedures. The first role-based proof of concept is on the colony simulator development branch, not part of the frozen research benchmark.
+
+Run the interactive map on a desktop with Tkinter:
+
+```bash
+python -m drone_hive.colony_ui
+```
+
+Use **Quick assign standard crew** or individually assign each bee's role and nest before starting. Click on the map to place a new hive or standby egg; inject failures and authorize egg activation from the command panel. This is an abstract game-like *prototype*, not physics-calibrated robotics or a completed visual game. The old experimental dashboard remains available as before.
+
+See [full original mission scope and contingency research plan](docs/COLONY_VISION.md). **Existing Stage One evidence is preserved unchanged**; new role-based results must be collected separately under a different experimental protocol.
