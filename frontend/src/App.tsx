@@ -1,15 +1,17 @@
 import {useEffect,useState} from 'react';
 import {Scene} from './Scene';
 import {hives,eggs,hivesById,eggsById,colonies,State,Failure,start,inject,restore,activeEggs,bridge} from './model';
-import {demos,scenario,type DemoId} from './demos';
+import {demos,getDemoFrame,demoLength,type DemoId} from './demos';
 import './styles.css';
 const failureTypes:Failure[]=['hardware','communications','energy','destroyed','blocked'];
 function App(){
  const [state,setState]=useState<State>(start);const [selected,setSelected]=useState('A:N2');
  const [demo,setDemo]=useState<DemoId>('overview');
- const pickDemo=(id:DemoId)=>{setDemo(id);setState(scenario(id));setSelected(demos.find(x=>x.id===id)!.selection)};
+ const [demoStep,setDemoStep]=useState(0);
+ const pickDemo=(id:DemoId)=>{setDemo(id);setDemoStep(0);const frame=getDemoFrame(id,0);setState(frame.state);setSelected(frame.select)};
+ const advance=(id:DemoId,step:number)=>{const frame=getDemoFrame(id,step);setDemo(id);setDemoStep(frame.step);setState(frame.state);setSelected(frame.select)};
  const [kind,setKind]=useState<Failure>('hardware');const [multi,setMulti]=useState(false);const [dialog,setDialog]=useState(false);
- useEffect(()=>{const params=new URLSearchParams(location.search);const id=params.get('demo');if(demos.some(x=>x.id===id))pickDemo(id as DemoId)},[]);
+ useEffect(()=>{const params=new URLSearchParams(location.search);const id=params.get('demo');if(demos.some(x=>x.id===id)){const step=Number(params.get('step')??'0');advance(id as DemoId,Number.isFinite(step)?step:0)}},[]);
  useEffect(()=>{const timer=setInterval(()=>setState(s=>s.run?{...s,tick:s.tick+1}:s),850);return ()=>clearInterval(timer)},[]);
  const node=hivesById[selected],egg=eggsById[selected],active=activeEggs(state),paths=bridge(state);
  const target=node?.id??'A:N2';
@@ -34,7 +36,7 @@ function App(){
  <button className="btn red" onClick={()=>setDialog(true)}>⚠ INJECT FAILURE</button>
  <button className="btn amber" onClick={()=>setState(s=>({...s,events:[...s.events,'COLONY '+(node?.colony??egg?.colony??'A')+': RECALL TO SAFE NEST / EGG']}))}>↶ RECALL COLONY</button>
  <button className="btn" onClick={()=>setState(s=>restore(s,target))}>↻ RESTORE</button><button className="btn" onClick={()=>pickDemo('overview')}>RESET</button>
- </div></div></section>
+ </div><div className="timeline"><div className="timeline-copy"><b>STAGE {demoStep+1}/{demoLength(demo)}: {getDemoFrame(demo,demoStep).title}</b><span>{getDemoFrame(demo,demoStep).detail}</span></div><button className="btn" data-testid="demo-prev" onClick={()=>advance(demo,Math.max(0,demoStep-1))}>◀ PREVIOUS</button><button className="btn violet" data-testid="demo-next" onClick={()=>advance(demo,(demoStep+1)%demoLength(demo))}>NEXT EVENT ▶</button></div></div></section>
  <aside className="right panel"><h2>⌕ NODE INSPECTOR</h2><select className="picker" value={selected} onChange={e=>setSelected(e.target.value)}>{hives.map(n=><option key={n.id} value={n.id}>{n.id} · {n.level===0?'Energy Root':n.level===1?'Queen Hive':'Forward Nest'}</option>)}{eggs.map(e=><option key={e.id} value={e.id}>{e.id} · Midpoint Egg</option>)}</select>
  {node?<><div className={'selection '+(state.failure[node.id]?'down':'')}><span className="hex">⬡</span><div><b>{node.id} · {node.level===0?'ENERGY ROOT':node.level===1?'QUEEN HIVE':'FORWARD NEST'}</b><small>{state.failure[node.id]?'FAULT: '+state.failure[node.id].toUpperCase():'NOMINAL OPERATIONS'}</small></div></div>
  <div className="facts"><p><span>COLONY</span><b>{node.colony}</b></p><p><span>PARENT</span><b>{node.parent??'Independent root'}</b></p><p><span>COMMAND</span><b>{node.level===1?'ONE QUEEN':node.level===0?'Energy management':'Local delegated safety'}</b></p><p><span>STATUS</span><b className={state.failure[node.id]?'bad':'good'}>{state.failure[node.id]??'Operational'}</b></p><p><span>POWER</span><b>Finite, abstract model</b></p></div>
