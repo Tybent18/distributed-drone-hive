@@ -26,6 +26,12 @@ jobs:
       - run: pytest -q
       - name: Smoke-test evidence pipeline
         run: python -m drone_hive.cli --quick --output results/ci-smoke
+      - name: Run Stage Two diagnostic fault matrix
+        run: python -m drone_hive.stage_two_smoke --output results/stage-two-diagnostic
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-two-diagnostic-py${{ matrix.python-version }}
+          path: results/stage-two-diagnostic/
       - name: Install virtual display for GUI smoke test
         if: matrix.python-version == '3.12'
         run: sudo apt-get update -qq && sudo apt-get install -y xvfb
