@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, field
 from hashlib import sha256
-from math import hypot
+from math import hypot, isclose
 from random import Random
 
 WORKER_TASKS = ("scout", "mapping", "structure_imaging", "environment")
@@ -24,6 +24,19 @@ PHYSICAL_FAILURES = frozenset(FAILURES[1:])
 COMM_RANGE = 90.0
 RETURN_RESERVE = 30.0
 TRANSFER_EFFICIENCY = 0.70  # EXPLICITLY hypothetical, not measured wireless transfer
+
+
+@dataclass(frozen=True)
+class EnergyEvent:
+    """An abstract energy source, sink, or conserved exchange."""
+
+    tick: int
+    kind: str
+    source: str
+    destination: str
+    debited: float
+    credited: float
+    dissipated: float
 
 
 @dataclass
@@ -107,15 +120,31 @@ class ColonyWeb:
     are deliberately distinct relationships.
     """
 
-    def __init__(self, seed: int = 42, colonies: int = 3) -> None:
+    def __init__(
+        self, seed: int = 42, colonies: int = 3, *,
+        radio_range: float = COMM_RANGE,
+        obstacles: tuple[tuple[float, float, float, float], ...] = (),
+        layout_jitter: float = 0.0,
+        egg_radio: bool = True,
+        assistance_radio: bool = True,
+    ) -> None:
         if colonies < 1 or colonies > 5:
             raise ValueError("Number of colonies must be between 1 and 5")
+        if radio_range <= 0 or layout_jitter < 0:
+            raise ValueError("Radio range must be positive and jitter nonnegative")
         self.rng = Random(seed)
         self.seed = seed
         self.tick = 0
         self.running = False
         self.operator_online = True
         self.solar_available = True
+        self.radio_range = radio_range
+        self.radio_obstacles = obstacles
+        self.layout_jitter = layout_jitter
+        self.egg_radio = egg_radio
+        self.assistance_radio = assistance_radio
+        self.energy_ledger: list[EnergyEvent] = []
+        self._energy_initial: float = 0.0
         self.nests: dict[str, Nest] = {}
         self.eggs: dict[str, Egg] = {}
         self.bees: dict[str, Bee] = {}
@@ -131,6 +160,7 @@ class ColonyWeb:
         for i in range(colonies):
             self._seed_colony(chr(65 + i), i)
         self._make_assistance_routes()
+        self._energy_initial = self.total_stored_energy()
         self._log("Multi-colony expedition ready; each N1 has one independent Queen")
 
     def _log(self, description: str) -> None:
@@ -156,8 +186,12 @@ class ColonyWeb:
             key = f"{colony}:N{level}"
             kind = ("energy_root" if level == 0 else "queen_hive" if level == 1
                     else "expansion_hive")
+            coordinates = (
+                position[0] + self.rng.uniform(-self.layout_jitter, self.layout_jitter),
+                position[1] + self.rng.uniform(-self.layout_jitter, self.layout_jitter),
+            ) if self.layout_jitter else position
             nest = Nest(
-                key, colony, level, *position, parent, kind,
+                key, colony, level, *coordinates, parent, kind,
                 inventory={"foldable_chassis": 1, "battery_module": 2,
                            "comms_module": 2, "contingency_module": 1},
                 docking_slots=10 if level == 1 else 6,
@@ -303,26 +337,63 @@ class ColonyWeb:
             self._add_bee(node.colony, node_key, "worker", task, SENSORS[task])
         self._log(f"{node_key}: worker payload configuration -> {tasks}")
 
+    @staticmethod
+    def _segment_hits_box(
+        x1: float, y1: float, x2: float, y2: float,
+        rect: tuple[float, float, float, float],
+    ) -> bool:
+        """Liang–Barsky line segment / opaque rectangular obstruction test."""
+        left, bottom, right, top = rect
+        dx, dy = x2 - x1, y2 - y1
+        edges = (-dx, dx, -dy, dy)
+        limits = (x1 - left, right - x1, y1 - bottom, top - y1)
+        u0, u1 = 0.0, 1.0
+        for p, q in zip(edges, limits, strict=True):
+            if abs(p) < 1e-12:
+                if q < 0:
+                    return False
+            else:
+                t = q / p
+                if p < 0:
+                    u0 = max(u0, t)
+                else:
+                    u1 = min(u1, t)
+                if u0 > u1:
+                    return False
+        return True
+
+    def radio_reachable(self, a: Nest | Egg, b: Nest | Egg) -> bool:
+        """Simplified isotropic geometric LOS, not measured RF propagation."""
+        if self.distance(a, b) > self.radio_range:
+            return False
+        return not any(
+            self._segment_hits_box(a.x, a.y, b.x, b.y, box)
+            for box in self.radio_obstacles
+        )
+
     def _network_nodes(self) -> dict[str, Nest | Egg]:
         return {
             **{key: node for key, node in self.nests.items()
                if node.health not in PHYSICAL_FAILURES
                and node.communications == "online" and node.energy > 0},
             **{key: egg for key, egg in self.eggs.items()
-               if egg.mode in ("bridging", "refuge") and egg.energy > 0},
+               if self.egg_radio and egg.mode in ("bridging", "refuge")
+               and egg.energy > 0},
         }
 
     def communication_links(self, include_assistance: bool = True) -> set[tuple[str, str]]:
-        """Geometry-constrained radio mesh; assistance links never convey authority."""
+        """Range/opaque-obstacle-constrained links; foreign authority never passes."""
         active = self._network_nodes()
         ids = sorted(active)
         links: set[tuple[str, str]] = set()
         for i, a in enumerate(ids):
             for b in ids[i + 1:]:
                 if active[a].colony != active[b].colony:
-                    if not include_assistance or (a, b) not in self.assistance:
+                    if not include_assistance or not self.assistance_radio or (
+                        (a, b) not in self.assistance
+                    ):
                         continue
-                if self.distance(active[a], active[b]) <= COMM_RANGE:
+                if self.radio_reachable(active[a], active[b]):
                     links.add((a, b))
         return links
 
@@ -372,9 +443,9 @@ class ColonyWeb:
                     for two in eggs:
                         if (two.left == failed_node and two.right == child
                             and two.key in active
-                            and self.distance(one, two) <= COMM_RANGE
-                            and self.distance(active[parent], one) <= COMM_RANGE
-                            and self.distance(two, active[child]) <= COMM_RANGE):
+                            and self.radio_reachable(one, two)
+                            and self.radio_reachable(active[parent], one)
+                            and self.radio_reachable(two, active[child])):
                             return [parent, one.key, two.key, child]
         return []
 
@@ -382,7 +453,7 @@ class ColonyWeb:
         for egg in self.eggs.values():
             if egg.left in keys or egg.right in keys:
                 if egg.mode == "standby" and egg.energy > 0:
-                    egg.mode = "bridging"
+                    egg.mode = "bridging" if self.egg_radio else "refuge"
                     self._log(f"{egg.key}: micro-nest safety activation (bridge/refuge)")
         for failed in sorted(keys):
             path = self.bridge_path(failed)
@@ -410,6 +481,7 @@ class ColonyWeb:
                 nest.communications = "disconnected"
                 if kind == "energy":
                     self.energy_failure_losses += nest.energy
+                    self._energy_event("fault_loss", key, "damaged", nest.energy, 0)
                     nest.energy = 0
                 affected.add(key)
                 self._log(f"{key}: {kind.upper()} FAILURE; emergency recall")
@@ -428,7 +500,7 @@ class ColonyWeb:
             other.key for other in self.nests.values()
             if other.key != key and other.health == "operational"
             and other.communications == "online"
-            and self.distance(nest, other) <= COMM_RANGE
+            and self.radio_reachable(nest, other)
         ]
         assessment = "neighbors=" + ",".join(nearby) if nearby else "no local neighbors"
         self._log(f"{key}: communications diagnostic: {assessment}")
@@ -439,7 +511,6 @@ class ColonyWeb:
             raise ValueError(key)
         nest = self.nests[key]
         nest.health = "operational"
-        nest.communications = "online"
         # Physical restoration is not a source of stored battery energy.
         # In particular, a power-failed nest remains dark until charged from
         # a separately accounted supply or replaced with charged modules.
@@ -560,29 +631,68 @@ class ColonyWeb:
         self.pending_repairs[key] = max(1, self.pending_repairs[key])
         self._log(f"{key}: Retriever repair authorized; simulation timer started")
 
+    def total_stored_energy(self) -> float:
+        return (
+            sum(node.energy for node in self.nests.values())
+            + sum(egg.energy for egg in self.eggs.values())
+            + sum(bee.energy for bee in self.bees.values())
+        )
+
+    def _energy_event(
+        self, kind: str, source: str, destination: str,
+        debited: float, credited: float, dissipated: float = 0,
+    ) -> None:
+        if min(debited, credited, dissipated) < -1e-9:
+            raise AssertionError("Negative energy transfer")
+        if kind == "solar":
+            if not isclose(debited, 0, abs_tol=1e-9):
+                raise AssertionError("Solar is a bounded external input")
+        elif not isclose(debited, credited + dissipated, abs_tol=1e-7):
+            raise AssertionError("Energy ledger exchange does not balance")
+        self.energy_ledger.append(EnergyEvent(
+            self.tick, kind, source, destination, debited, credited, dissipated
+        ))
+
+    def energy_balance_residual(self) -> float:
+        """Storage must equal initial + solar - irreversible losses."""
+        generated = sum(e.credited for e in self.energy_ledger if e.kind == "solar")
+        losses = sum(e.dissipated for e in self.energy_ledger)
+        return self.total_stored_energy() - (self._energy_initial + generated - losses)
+
     def _update_energy(self) -> None:
         for node in self.nests.values():
             if node.health in PHYSICAL_FAILURES:
                 continue
-            if node.level == 0:
-                generated = 0.65 if self.solar_available else 0.0
-                node.energy = min(node.battery_capacity, node.energy + generated - 0.18)
-            else:
-                node.energy = max(0.0, node.energy - 0.07)
-        # Nominal energy topology follows the construction parent and finite
-        # stores; never assert successful energy transfer without a model.
+            idle = 0.18 if node.level == 0 else 0.07
+            used = min(idle, node.energy)
+            node.energy -= used
+            self._energy_event("nest_idle", node.key, "heat", used, 0, used)
+            if node.level == 0 and self.solar_available:
+                generated = min(0.65, node.battery_capacity - node.energy)
+                node.energy += generated
+                self._energy_event("solar", "sun", node.key, 0, generated)
+        # Abstract energy links follow construction parentage. Their existence is
+        # NOT a radio link and does not imply practical remote RF charging.
         for node in sorted(self.nests.values(), key=lambda n: n.level):
             if node.level == 0 or not node.parent or node.health in PHYSICAL_FAILURES:
                 continue
             source = self.nests[node.parent]
             if source.energy > 35 and node.energy < 75 and source.health == "operational":
-                sent = min(0.4, source.energy - 35)
+                sent = min(0.4, source.energy - 35,
+                           (node.battery_capacity - node.energy) / TRANSFER_EFFICIENCY)
                 source.energy -= sent
-                node.energy = min(node.battery_capacity, node.energy + sent * TRANSFER_EFFICIENCY)
+                delivered = sent * TRANSFER_EFFICIENCY
+                node.energy += delivered
+                self._energy_event(
+                    "hypothetical_parent_transfer", source.key, node.key,
+                    sent, delivered, sent - delivered
+                )
         for egg in self.eggs.values():
             if egg.mode != "standby":
-                egg.energy = max(0.0, egg.energy - 0.10)
-                if egg.energy <= 0:
+                used = min(0.10, egg.energy)
+                egg.energy -= used
+                self._energy_event("egg_idle", egg.key, "heat", used, 0, used)
+                if egg.energy <= 0 and egg.mode != "depleted":
                     egg.mode = "depleted"
                     self._log(f"{egg.key}: micro-nest reserve depleted")
 
@@ -598,7 +708,9 @@ class ColonyWeb:
                 if distance > 0:
                     bee.x += (target.x - bee.x) * step / distance
                     bee.y += (target.y - bee.y) * step / distance
-                bee.energy = max(0, bee.energy - step * 0.45)
+                used = min(bee.energy, step * 0.45)
+                bee.energy -= used
+                self._energy_event("return_flight", bee.key, "flight", used, 0, used)
                 if distance <= 3.5:
                     if isinstance(target, Egg):
                         valid = target.mode in ("bridging", "refuge") and target.energy >= 8
@@ -614,14 +726,21 @@ class ColonyWeb:
                 if home_obj is not None and home_obj.energy > 10:
                     amount = min(0.25, (100.0 - bee.energy), home_obj.energy - 10)
                     if amount > 0:
-                        bee.energy += amount * 0.8
+                        received = amount * 0.8
+                        bee.energy += received
                         home_obj.energy -= amount
+                        self._energy_event(
+                            "docked_charge", bee.destination or bee.home, bee.key,
+                            amount, received, amount - received
+                        )
                 continue
             if bee.role != "worker" or bee.state != "surveying":
                 continue
             bee.x += self.rng.uniform(-2.0, 2.0)
             bee.y += self.rng.uniform(-2.0, 2.0)
-            bee.energy = max(0.0, bee.energy - 0.30)
+            used = min(0.30, bee.energy)
+            bee.energy -= used
+            self._energy_event("survey_flight", bee.key, "flight", used, 0, used)
             sensor = next((s for s in bee.sensors if s != "telemetry"), bee.sensors[0])
             size = 800_000 if "video" in bee.sensors else 450_000
             sequence = len(bee.sensor_records) + 1
@@ -685,6 +804,7 @@ class ColonyWeb:
             "sheltering": sum(b.state == "sheltering" for b in self.bees.values()),
             "sensor_records": sum(len(b.sensor_records) for b in self.bees.values()),
             "energy_failure_losses": round(self.energy_failure_losses, 3),
+            "energy_balance_error": round(self.energy_balance_residual(), 8),
             "recorded_mb": round(sum(b.recordings_mb for b in self.bees.values()), 2),
             "links": len(self.communication_links()),
         }
