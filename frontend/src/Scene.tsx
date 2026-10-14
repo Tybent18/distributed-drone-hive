@@ -2,7 +2,7 @@ import {Canvas,useFrame} from '@react-three/fiber';
 import {OrbitControls,Line,Html,Sparkles} from '@react-three/drei';
 import {useMemo,useRef} from 'react';
 import * as THREE from 'three';
-import {hives,eggs,hivesById,eggsById,activeEggs,bridge,State,Hive} from './model';
+import {hives,eggs,hivesById,eggsById,activeEggs,bridge,type State,type Hive} from './model';
 const palette:Record<string,string>={A:'#ffce69',B:'#4de7ef',C:'#4de9a7'};
 function Terrain(){
  const ground=useMemo(()=>{const g=new THREE.PlaneGeometry(43,38,60,60);g.rotateX(-Math.PI/2);const p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);p.setY(i,Math.sin(x*.6)*Math.cos(z*.48)*.15-.16)}g.computeVertexNormals();return g},[]);
@@ -55,7 +55,7 @@ function Links({s}:{s:State}){
 export function Scene({state,selected,choose}:{state:State;selected:string;choose:(v:string)=>void}){
  return <Canvas shadows dpr={[1,1.5]} camera={{position:[-5,25,32],fov:44,near:.2,far:150}} gl={{antialias:true,powerPreference:'high-performance'}}>
  <color attach="background" args={['#20343b']}/><fog attach="fog" args={['#284047',26,82]}/>
- <hemisphereLight args={['#b9eaff','#6a4d2e',2}/><ambientLight intensity={.5}/>
+ <hemisphereLight args={['#b9eaff','#6a4d2e',2]}/><ambientLight intensity={.5}/>
  <directionalLight position={[-10,19,-9]} color="#ffe3a9" intensity={3} castShadow shadow-mapSize={[2048,2048]} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25}/>
  <Terrain/><Links s={state}/>
  {hives.map(n=><Node key={n.id} n={n} s={state} selected={selected===n.id} choose={choose}/>)}
