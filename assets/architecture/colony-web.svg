@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 640" role="img" aria-label="Drone Hive federated multi-colony graph and egg bridge failure recovery">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#07131f"/><stop offset="1" stop-color="#112d3c"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<rect width="1100" height="640" rx="22" fill="url(#bg)"/>
+<text x="48" y="55" fill="#f8c75e" font-size="31" font-family="Arial" font-weight="bold">DRONE HIVE</text>
+<text x="275" y="55" fill="#53e0ee" font-size="25" font-family="Arial">/ FEDERATED COLONY WEB</text>
+<text x="48" y="84" fill="#a5c5d0" font-size="15" font-family="Arial">Independent command · energy roots · mission-based workers · midpoint contingency micro-nests</text>
+<rect x="34" y="111" width="504" height="394" rx="12" fill="#0c2534" stroke="#335a69"/>
+<rect x="562" y="111" width="504" height="394" rx="12" fill="#0c2534" stroke="#335a69"/>
+<g font-family="Arial" font-size="19" font-weight="bold"><text x="55" y="148" fill="#f8c75e">COLONY A · one N1 Queen</text><text x="583" y="148" fill="#53e0ee">COLONY B · one N1 Queen</text></g>
+<g stroke-width="4" fill="none" stroke-linecap="round" filter="url(#glow)">
+<path d="M115 226 L248 226 L374 226 L456 194" stroke="#ff6177" stroke-dasharray="10 9"/>
+<path d="M248 226 L312 302 L374 226" stroke="#d58afe" stroke-dasharray="7 5"/>
+<path d="M115 226 L176 301 L312 302 L456 194" stroke="#d58afe" stroke-dasharray="8 5"/>
+<path d="M643 226 L780 226 L906 226 L997 193" stroke="#53e0ee"/>
+<path d="M780 226 L847 302 L906 226" stroke="#698999" stroke-dasharray="6 7"/>
+<path d="M457 194 Q561 122 643 226" stroke="#f8c75e" stroke-dasharray="5 8"/>
+</g>
+<g font-family="Arial" text-anchor="middle" font-weight="bold">
+<g fill="#183a49" stroke="#f8c75e" stroke-width="3"><circle cx="115" cy="226" r="31"/><circle cx="248" cy="226" r="31"/><circle cx="643" cy="226" r="31"/><circle cx="780" cy="226" r="31"/></g>
+<g fill="#16354b" stroke="#53e0ee" stroke-width="3"><circle cx="456" cy="194" r="27"/><circle cx="906" cy="226" r="27"/><circle cx="997" cy="193" r="27"/></g>
+<g fill="#491f36" stroke="#ff6177" stroke-width="3"><circle cx="374" cy="226" r="30"/></g>
+<g fill="#39244e" stroke="#d58afe" stroke-width="3"><circle cx="176" cy="301" r="23"/><circle cx="312" cy="302" r="23"/><circle cx="847" cy="302" r="23"/></g>
+<g fill="#eafaff" font-size="16"><text x="115" y="232">N0</text><text x="248" y="232">N1</text><text x="374" y="232">N2</text><text x="456" y="200">N3</text><text x="176" y="307">E1</text><text x="312" y="308">E2</text><text x="643" y="232">N0</text><text x="780" y="232">N1</text><text x="906" y="232">N2</text><text x="997" y="199">N3</text><text x="847" y="308">E1</text></g>
+<g font-size="13" fill="#bcd5de"><text x="115" y="277">ENERGY</text><text x="248" y="277">QUEEN</text><text x="374" y="275" fill="#ff6177">FAILED</text><text x="176" y="341" fill="#d58afe">ACTIVE</text><text x="312" y="342" fill="#d58afe">ACTIVE</text><text x="643" y="277">ENERGY</text><text x="780" y="277">QUEEN</text><text x="906" y="272">SURVEY</text><text x="847" y="344">STANDBY</text></g>
+</g>
+<g font-family="Arial" font-size="15" fill="#e2eefa"><text x="63" y="395">N2 physical failure → E1 + E2 bridge N1 to N3</text><text x="582" y="395">Independent authority preserved during assistance</text><text x="63" y="426" fill="#d58afe">BRIDGE PATH: N1 ↔ E1 ↔ E2 ↔ N3</text><text x="582" y="426" fill="#f8c75e">Cross-colony: communication / rescue ONLY</text></g>
+<g font-family="Arial" font-size="16" fill="#d8eef3"><text x="46" y="552">N0: solar + finite stored power</text><text x="404" y="552">N1: 1 Queen + 3 Handlers</text><text x="778" y="552">N2+: 2 Handlers + Workers</text></g>
+<text x="46" y="593" font-family="Arial" font-size="13" fill="#93aebb">Conceptual simulation topology. Power transfer, radio range, docking and physical emergency recovery are NOT hardware validated.</text>
+</svg>
