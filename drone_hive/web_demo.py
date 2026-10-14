@@ -56,7 +56,11 @@ def generate(path: Path = Path("demos/colony-web-operational.gif")) -> Path:
         })
 
     fig, ax = plt.subplots(figsize=(13, 7.4), facecolor=BACKGROUND)
-    fig.subplots_adjust(left=.04, right=.96, top=.90, bottom=.15)
+    fig.subplots_adjust(left=.04, right=.96, top=.87, bottom=.15)
+    fig.text(.06, .966, "DRONE HIVE / FEDERATED COLONY OPS",
+             color="#f6c75e", fontsize=18, fontweight="bold", va="top")
+    phase_label = fig.text(.06, .916, "", color="#53e0ee", fontsize=10, va="top")
+    metrics_label = fig.text(.06, .06, "", color="white", fontsize=10, va="bottom")
 
     def draw(index: int):
         step = steps[index]
@@ -102,24 +106,17 @@ def generate(path: Path = Path("demos/colony-web-operational.gif")) -> Path:
             ax.scatter((x,), (y,), s=190, c=color, marker="d",
                        edgecolors="white", linewidths=.8, zorder=7)
             ax.text(x, y + 20, key, color=color, ha="center", fontsize=8)
-        ax.set_title(
-            "DRONE HIVE  /  FEDERATED COLONY OPS   •   SIMULATOR",
-            color="#f6c75e", loc="left", fontsize=19, fontweight="bold", pad=20,
-        )
         phase = ("EXPLORATION" if index < 15 else "PHYSICAL NODE FAILURE" if index < 35
                  else "RETRIEVER REPAIR" if index < 50 else "NODE RESTORED" if index < 56
                  else "COMMS DIAGNOSTICS")
-        fig.text(.07, .895, f"PHASE: {phase}    |    TICK {step['tick']}",
-                 color="#53e0ee", fontsize=11)
+        phase_label.set_text(f"PHASE: {phase}    |    TICK {step['tick']}")
         metrics = step["metrics"]
-        fig.text(
-            .06, .05,
-            f"NODES {metrics['working_nodes']}/{metrics['nodes']}    "
-            f"MICRO-NEST BRIDGES {metrics['eggs_bridging']}    "
-            f"RADIO LINKS {metrics['links']}    "
-            f"DRONES {metrics['drones']}    "
-            f"RECORDING {metrics['recorded_mb']} MB",
-            color="white", fontsize=11,
+        metrics_label.set_text(
+            f"NODES {metrics['working_nodes']}/{metrics['nodes']}   |   "
+            f"EGGS BRIDGING {metrics['eggs_bridging']}   |   "
+            f"RADIO LINKS {metrics['links']}   |   "
+            f"DRONES {metrics['drones']}   |   "
+            f"RECORDING {metrics['recorded_mb']} MB"
         )
         return ()
 
