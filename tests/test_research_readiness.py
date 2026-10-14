@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from math import isclose
 
-import pytest
-
 from drone_hive.colony_web import ColonyWeb
 
 
@@ -47,10 +45,6 @@ def test_recovery_has_no_intercolony_command_takeover() -> None:
     assert model.queen_for("B").home == "B:N1"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="R0-C: recall does not reserve/deduct finite micro-nest docking slots",
-)
 def test_emergency_refuges_must_never_be_overbooked() -> None:
     model = ColonyWeb(colonies=1)
     for node in model.nests.values():
@@ -68,10 +62,6 @@ def test_emergency_refuges_must_never_be_overbooked() -> None:
     assert len(arrivals) <= refuge.docking_slots
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="R0-B: restoring a failed nest credits 35 energy without an accounted source",
-)
 def test_physical_repair_must_not_create_energy() -> None:
     model = ColonyWeb(colonies=1)
     model.inject_failure(["A:N2"], "energy")
@@ -85,10 +75,6 @@ def test_physical_repair_must_not_create_energy() -> None:
     assert after <= before
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="R0-A: Queen lookup ignores whether the Queen is disabled/unavailable",
-)
 def test_disabled_queen_must_not_retain_live_authority() -> None:
     model = ColonyWeb(colonies=1)
     model.queen_for("A").state = "disabled"
@@ -96,17 +82,13 @@ def test_disabled_queen_must_not_retain_live_authority() -> None:
         model.queen_for("A")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="R0-F: synthesized MB counts have no per-measurement calibrated provenance",
-)
 def test_sensor_measurements_require_traceable_records() -> None:
     model = ColonyWeb(colonies=1)
     model.launch()
     model.step(5)
     bee = next(bee for bee in model.bees.values() if bee.mission == "mapping")
-    assert hasattr(bee, "sensor_records")
     assert bee.sensor_records
+    assert all(row.synthetic and not row.calibrated for row in bee.sensor_records)
     assert all(
         getattr(row, "sensor_id", None)
         and getattr(row, "timestamp", None)
