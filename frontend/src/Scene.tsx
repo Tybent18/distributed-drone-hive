@@ -15,7 +15,7 @@ function Terrain(){
  <mesh position={[0,.65,0]} castShadow><boxGeometry args={[.33,1.3,.3]}/><meshStandardMaterial color="#d0ba92" roughness={1}/></mesh>
  <mesh position={[0,1.32,0]} castShadow><boxGeometry args={[.74,.25,.43]}/><meshStandardMaterial color="#d5bb91"/></mesh></group>})}</group>)}
  <mesh rotation={[-Math.PI/2,0,-.2]} position={[15,.035,5]}><planeGeometry args={[8,5]}/><meshBasicMaterial color="#e83150" transparent opacity={.22}/></mesh>
- <Sparkles count={48} scale={[40,3,32]} size={1.2} speed={.2} color="#ffdb91" opacity={.25}/></group>
+ <Sparkles count={16} scale={[40,3,32]} size={1.2} speed={.2} color="#ffdb91" opacity={.25}/></group>
 }
 function Node({n,s,selected,choose}:{n:Hive;s:State;selected:boolean;choose:(v:string)=>void}){
  const fault=s.failure[n.id],physical=fault&&fault!=='communications';const color=physical?'#ff6274':n.level<=1?'#ffca61':palette[n.colony];
@@ -48,10 +48,11 @@ function Links({s}:{s:State}){
  {eggs.filter(e=>!active.includes(e.id)).map(e=><Line key={e.id} points={[[e.x,.2,e.z],[hivesById[e.right].x,.2,hivesById[e.right].z]]} color="#80748c" lineWidth={1} dashed dashSize={.25} gapSize={.3}/>)}</>
 }
 export function Scene({state,selected,choose}:{state:State;selected:string;choose:(v:string)=>void}){
- return <Canvas shadows dpr={[1,1.5]} camera={{position:[-5,25,32],fov:44,near:.2,far:150}} gl={{antialias:true,powerPreference:'high-performance'}}>
+ const capture=new URLSearchParams(window.location.search).has('capture');
+ return <Canvas shadows={!capture} dpr={capture?.65:[1,1.5]} camera={{position:[-5,25,32],fov:44,near:.2,far:150}} gl={{antialias:true,powerPreference:'high-performance'}}>
  <color attach="background" args={['#20343b']}/><fog attach="fog" args={['#284047',26,82]}/>
  <hemisphereLight args={['#b9eaff','#6a4d2e',2]}/><ambientLight intensity={.5}/>
- <directionalLight position={[-10,19,-9]} color="#ffe3a9" intensity={3} castShadow shadow-mapSize={[2048,2048]} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25}/>
+ <directionalLight position={[-10,19,-9]} color="#ffe3a9" intensity={3} castShadow={!capture} shadow-mapSize={[2048,2048]} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25}/>
  <Terrain/><Links s={state}/>
  {hives.map(n=><Node key={n.id} n={n} s={state} selected={selected===n.id} choose={choose}/>)}
  {eggs.map(e=><Egg key={e.id} {...e} active={activeEggs(state).includes(e.id)} choose={choose}/>)}
