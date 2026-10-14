@@ -49,6 +49,7 @@ def configure(model: ColonyWeb, arm: str) -> None:
         for egg in model.eggs.values():
             root = model.nests[f"{egg.colony}:N0"]
             egg.x, egg.y = root.x, root.y
+    model._energy_initial = model.total_stored_energy()
     # C4 permits local refuge but no egg communication. C3 is a logistics
     # depot analog, NOT a validated mid-distance replacement response.
 
