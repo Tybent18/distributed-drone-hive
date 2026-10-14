@@ -18,6 +18,8 @@ dev = ["pytest>=8", "ruff>=0.6"]
 [project.scripts]
 drone-hive-experiment = "drone_hive.cli:main"
 drone-hive-dashboard = "drone_hive.dashboard:main"
+drone-hive-colony-ops = "drone_hive.colony_web_ui:main"
+drone-hive-web-demo = "drone_hive.web_demo:main"
 
 [tool.setuptools.packages.find]
 include = ["drone_hive*"]
