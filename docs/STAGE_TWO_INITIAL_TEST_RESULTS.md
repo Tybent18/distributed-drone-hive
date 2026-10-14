@@ -46,3 +46,23 @@ The matrix records per-run radio links, whether A:N2 had a verified egg bridge, 
 5. Implement and test the seven matched study arms in [the preregistered protocol](STAGE_TWO_EXPERIMENT_PROTOCOL.md), then create a **new immutable `data/colony_recovery/runs/` evidence bundle**.
 
 Do **not** overwrite the September 2026 Stage One dataset or use this smoke run to claim superiority over the historical infrastructure policies. The current-facing README and old evidence narratives should be replaced only when the Stage Two comparison is completed and reviewed.
+
+
+## Second iteration: energy ledger, radio obstacles and seven-arm exploration (October 14, 2026)
+
+[Successful CI run #38653201008](https://github.com/Tybent18/distributed-drone-hive/actions/runs/38653201008) completed on Python 3.10 and Python 3.12.
+
+- **39 automated tests passed** per Python environment (including new energy-ledger, obstacle-geometry, short-range bridge and seven-arm diagnostic tests).
+- Stage Two engineering fault matrix completed: **210 metric rows** (10 seeds × 7 fault scenarios × 3 phases).
+- Seven-arm ablation completed: **210 metric rows** (10 paired seeds × C0–C6 × 3 scenarios). Available from the CI artifacts named \`stage-two-ablation-py3.10\` and \`stage-two-ablation-py3.12\`.
+- \`ColonyWeb.energy_ledger\` now stores abstract energy inputs, dissipative losses, charging exchange, fleet movement, node and egg idle draws, and fault losses. The \`energy_balance_residual()\` invariant is tested against conservation.
+- The communications graph now supports configurable range, a simple opaque-rectangle line-of-sight obstruction test, and explicit enabling/disabling of egg radio and cross-colony assistance.
+- The C0–C6 ablation separates a colony core, linear chain, branched web, central reserve egg analog, midpoint refuge only, midpoint radio/refuge, and midpoint plus assistance.
+
+### Critical research caveats
+
+These rows are *model/debugging evidence*, **not measured comparative effect sizes**. C0 lacks N2 so an N2 failure is marked not applicable. Infrastructure and worker inventories are not yet normalized; even disabled hives can retain existing scripted Workers, which biases survey and energy metrics. The radio obstacle test is geometric rather than a propagation/attenuation model. Egg placement at a central depot is an idealized C3 analog. Neither energy transfer nor Retriever logistics is physically calibrated. Stage Two must not use the generated rows to assert policy superiority, drone survival, accurate map coverage or engineering feasibility.
+
+For a publication-quality treatment comparison we still need equal initial hardware budgets and mission staff, fully simulated construction and charging logistics, calibrated and failure-correlated radio links, actual allocation and travel of emergency flights, sensor-data delivery verification, independently sampled environment seeds, and matched failure schedules.
+
+**Do not replace the historical Stage One results or finalize the main evidence documents from this diagnostic-only run.**
