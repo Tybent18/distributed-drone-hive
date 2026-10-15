@@ -1,0 +1,67 @@
+name: Research paper exports
+
+on:
+  pull_request:
+    paths:
+      - 'papers/**'
+      - '.github/workflows/papers.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'papers/**'
+      - '.github/workflows/papers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  render-manuscript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install export dependencies
+        run: python -m pip install reportlab pypandoc_binary
+      - name: Build manuscript PDF and Word document
+        run: |
+          python papers/render_paper.py
+          python - <<'PY'
+          import pypandoc
+          pypandoc.convert_file(
+              'papers/DRONE_HIVE_RESEARCH_MANUSCRIPT.md', 'docx',
+              outputfile='papers/Drone_Hive_Formal_Research_Paper.docx')
+          print('Rendered editable paper DOCX')
+          PY
+          test -s papers/Drone_Hive_Formal_Research_Paper.pdf
+          test -s papers/Drone_Hive_Formal_Research_Paper.docx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drone-hive-research-manuscript-pdf-and-docx
+          path: |
+            papers/Drone_Hive_Formal_Research_Paper.pdf
+            papers/Drone_Hive_Formal_Research_Paper.docx
+      - name: Commit reproducible paper exports to source branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add papers/Drone_Hive_Formal_Research_Paper.pdf papers/Drone_Hive_Formal_Research_Paper.docx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "papers: render manuscript PDF and DOCX [skip ci]"
+          ARTIFACT_COMMIT="$(git rev-parse HEAD)"
+          git fetch origin "${{ github.head_ref }}"
+          git checkout -B "${{ github.head_ref }}" FETCH_HEAD
+          git cherry-pick -X theirs "$ARTIFACT_COMMIT"
+          git push origin HEAD:${{ github.head_ref }}
+      - name: Commit paper exports on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add papers/Drone_Hive_Formal_Research_Paper.pdf papers/Drone_Hive_Formal_Research_Paper.docx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "papers: update rendered manuscripts [skip ci]"
+          git push origin main
