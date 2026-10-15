@@ -19,10 +19,9 @@ st={
  'cell':ParagraphStyle('PaperCell',parent=ss['BodyText'],fontSize=7.5,leading=10),
 }
 def formatted(value):
- value=escape(value).replace('—',' - ').replace('↔',' <-> ')
- value=re.sub(r'\\*\\*(.+?)\\*\\*',r'<b>\\1</b>',value)
- value=re.sub(r'(?<!\\*)\\*([^*]+)\\*(?!\\*)',r'<i>\\1</i>',value)
- value=re.sub(r'\\[([^\\]]+)\\]\\((https?://[^)]+)\\)',r'<link href="\\2" color="#177195">\\1</link>',value)
+ value=escape(value).replace('—',' - ').replace('↔',' to ')
+ value=re.sub(r'\*\*([^*]+)\*\*',r'<b>\1</b>',value)
+ value=re.sub(r'\*([^*]+)\*',r'<i>\1</i>',value)
  return value
 lines=text.splitlines()
 story=[]
