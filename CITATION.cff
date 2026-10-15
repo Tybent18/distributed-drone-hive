@@ -1,11 +1,11 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it using this metadata."
-title: "Distributed Drone Hive: Stage One Research Laboratory"
+message: "If you use this research software, please cite this software record. Manuscripts are unreviewed drafts and must not be cited as published research."
+title: "Drone Hive: Federated Bee-Inspired Colony Exploration Simulator"
 type: software
 authors:
   - family-names: Bentley
     given-names: Ty'Ron
 repository-code: "https://github.com/Tybent18/distributed-drone-hive"
-version: 0.1.0
-date-released: 2026-09-15
+version: 0.2.0
 license: MIT
+abstract: "Prototype and exploratory simulation of independently governed reconnaissance-drone colonies, modular nests, and temporary emergency micro-nests. Stage Two numerical data are preliminary software diagnostics, not hardware validation."
