@@ -1,3 +1,4 @@
+# ruff: noqa: E501, E701, E702, I001
 """Reproducible PDF renderer for the Markdown manuscript."""
 from pathlib import Path
 from html import escape
